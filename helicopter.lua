@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-06-09 04:49:34",modified="2024-06-26 05:22:32",revision=6155]]
+--[[pod_format="raw",created="2024-06-09 04:49:34",modified="2024-06-26 06:02:32",revision=6198]]
 local Rendering = require"rendering"
 local Transform = require"transform"
 local dtf = Transform.double_transform
@@ -65,7 +65,7 @@ local function update()
 	if body.position.y <= center_from_floor then
 		if body.velocity:magnitude() > 3 then
 			body.position.y = -body.position.y+center_from_floor*2
-			body.velocity.y = abs(body.velocity.y)
+			body.velocity.y += abs(body.velocity.y)*1.8
 			note(68+rnd(3),8,vol,0,0,8,true)
 		else
 			body.position.y = center_from_floor
