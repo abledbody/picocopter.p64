@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-06-26 05:22:32",revision=15377]]
+--[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-06-26 06:02:32",revision=15434]]
 include"require.lua"
 include"profiler.lua"
 
@@ -151,6 +151,7 @@ function _draw()
 	draw_sky(cam_pitch,cam_yaw)
 	
 	-- Chunks
+	local sorted_chunks = {}
 	for y = flr(cam_pos.z/16-3.5),flr(cam_pos.z/16+4.5) do
 		local y_arr = chunks[y]
 		if y_arr then
@@ -158,12 +159,25 @@ function _draw()
 				local chunk = y_arr[x]
 				if chunk then
 					local model,mat,imat = unpack(chunk)
-					Rendering.model(model,mat,imat)
+					if Rendering.in_frustum(model,mat,imat) then
+						local depth = vec(x*16,y*16)-vec(cam_pos.x,cam_pos.z)
+						depth *= depth
+						add(sorted_chunks,{chunk,depth = depth.x+depth.y})
+					end
 				end
 			end
 		end
 	end
-	Rendering.draw_all()
+	
+	profile("Z-sorting")
+	Utils.sort(sorted_chunks,"depth")
+	profile("Z-sorting")
+	
+	for i = #sorted_chunks,1,-1 do
+		local chunk = sorted_chunks[i]
+		Rendering.model(unpack(chunk[1]))
+		Rendering.draw_all()
+	end
 	
 	-- Helicopter
 	Helicopter.draw()

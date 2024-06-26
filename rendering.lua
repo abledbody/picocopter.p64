@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-05-22 18:18:28",modified="2024-06-25 21:58:13",revision=17063]]
+--[[pod_format="raw",created="2024-05-22 18:18:28",modified="2024-06-26 06:02:32",revision=17117]]
 local Utils = require"utils"
 local sort = Utils.sort
 local Transform = require"transform"
@@ -496,19 +496,21 @@ end
 
 -- Draw requests
 
-function Rendering.model(model,mat,imat)
+function Rendering.in_frustum(model,mat)
 	profile("Model frustum culling")
 	local cull_center = model.cull_center:matmul3d(mat:matmul3d(view_mat))
 	local cull_radius = model.cull_radius
 	local depth = -cull_center.z
 	
-	if depth < cam.near-cull_radius
+	local outside = depth < cam.near-cull_radius
 		or depth > cam.far+cull_radius
 		or vec(abs(cull_center.x),depth):dot(frust_norm_x) > cull_radius
 		or vec(abs(cull_center.y),depth):dot(frust_norm_y) > cull_radius
-	then profile("Model frustum culling") return end
 	profile("Model frustum culling")
-	
+	return not outside
+end
+
+function Rendering.model(model,mat,imat)
 	if dirty_vp then
 		vp_mat = view_mat:matmul(proj_mat)
 	end
