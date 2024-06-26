@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-06-26 06:02:32",revision=15434]]
+--[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-06-26 06:18:39",revision=15436]]
 include"require.lua"
 include"profiler.lua"
 
@@ -158,8 +158,8 @@ function _draw()
 			for x = flr(cam_pos.x/16-3.5),flr(cam_pos.x/16+4.5) do
 				local chunk = y_arr[x]
 				if chunk then
-					local model,mat,imat = unpack(chunk)
-					if Rendering.in_frustum(model,mat,imat) then
+					local model,mat = unpack(chunk)
+					if Rendering.in_frustum(model,mat) then
 						local depth = vec(x*16,y*16)-vec(cam_pos.x,cam_pos.z)
 						depth *= depth
 						add(sorted_chunks,{chunk,depth = depth.x+depth.y})
