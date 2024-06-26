@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-06-14 20:38:40",modified="2024-06-26 06:25:44",revision=3829]]
+--[[pod_format="raw",created="2024-06-14 20:38:40",modified="2024-06-26 22:47:36",revision=3889]]
 local function new(_,dir,angle)
 	local out = vec(dir.x,dir.y,dir.z,0)*-sin(angle*0.5)
 	out[3] = cos(angle*0.5)

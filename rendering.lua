@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-05-22 18:18:28",modified="2024-06-26 06:25:44",revision=17122]]
+--[[pod_format="raw",created="2024-05-22 18:18:28",modified="2024-06-26 22:47:36",revision=17205]]
 local Utils = require"utils"
 local sort = Utils.sort
 local Transform = require"transform"
@@ -10,11 +10,12 @@ local vid_res = vec(480,270)
 local aspect_ratio = vid_res.x/vid_res.y
 
 local cam_pos = vec(0,0,0)
-local cam = {near=0.1,far=100,fov_slope=1}
+
+local proj_mat = Utils.ident_4x4()
+local proj_settings = {near=0.1,far=100,fov_slope=1}
 local frust_norm_x = vec(0,-1,0)
 local frust_norm_y = vec(0,-1,0)
 
-local proj_mat = Utils.ident_4x4()
 local view_mat = Utils.ident_4x4()
 local dirty_vp = false
 local vp_mat = Utils.ident_4x4()
@@ -38,22 +39,29 @@ function Rendering.project(n,f,s)
 end
 
 function Rendering.cam(settings)
-	cam = {
-		near = settings.near or cam.near,
-		far = settings.far or cam.far,
-		fov_slope = settings.fov_slope or cam.fov_slope
+	local fov
+	if settings.fov then
+		local fov_angle = (0.5-settings.fov/360)*0.5
+		fov = -sin(fov_angle)/cos(fov_angle)
+	end
+	proj_settings = {
+		near = settings.near or proj_settings.near,
+		far = settings.far or proj_settings.far,
+		fov_slope = settings.fov_slope or fov or proj_settings.fov_slope
 	}
 	
-	-- Get the normal of the frustum planes so we can get the scalar projection
-	-- of the culling sphere onto it.
-	frust_norm_x = vec(cam.fov_slope,-1)
-	-- Micro-optimization to create yvec from xvec. Multiplies the first number in
-	-- x by aspect ratio and generates a new vector from it.
-	frust_norm_y = frust_norm_x:mul(aspect_ratio,false,0,0,1)
-	frust_norm_x /= frust_norm_x:magnitude()
-	frust_norm_y /= frust_norm_y:magnitude()
+	if settings.fov then
+		-- Get the normal of the frustum planes so we can get the scalar projection
+		-- of the culling sphere onto it.
+		frust_norm_x = vec(proj_settings.fov_slope,-1)
+		-- Micro-optimization to create yvec from xvec. Multiplies the first number in
+		-- x by aspect ratio and generates a new vector from it.
+		frust_norm_y = frust_norm_x:mul(aspect_ratio,false,0,0,1)
+		frust_norm_x /= frust_norm_x:magnitude()
+		frust_norm_y /= frust_norm_y:magnitude()
+	end
 	
-	proj_mat = Rendering.project(cam.near,cam.far,cam.fov_slope)
+	proj_mat = Rendering.project(proj_settings.near,proj_settings.far,proj_settings.fov_slope)
 	dirty_vp = true
 end
 
@@ -502,8 +510,8 @@ function Rendering.in_frustum(model,mat)
 	local cull_radius = model.cull_radius
 	local depth = -cull_center.z
 	
-	local outside = depth < cam.near-cull_radius
-		or depth > cam.far+cull_radius
+	local outside = depth < proj_settings.near-cull_radius
+		or depth > proj_settings.far+cull_radius
 		or vec(abs(cull_center.x),depth):dot(frust_norm_x) > cull_radius
 		or vec(abs(cull_center.y),depth):dot(frust_norm_y) > cull_radius
 	profile("Model frustum culling")

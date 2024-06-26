@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-06-26 06:25:44",revision=15441]]
+--[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-06-26 22:47:36",revision=15551]]
 include"require.lua"
 include"profiler.lua"
 
@@ -127,7 +127,7 @@ for y = -10,10 do
 	end
 end
 
-Rendering.cam{near=0.3,far=128,fov_slope=0.8}
+Rendering.cam{near=0.3,far=128,fov=110}
 
 function _update()
 	Helicopter.update()
