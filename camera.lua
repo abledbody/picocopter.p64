@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-06-09 05:13:18",modified="2024-06-25 21:58:13",revision=4942]]
+--[[pod_format="raw",created="2024-06-09 05:13:18",modified="2024-06-26 05:22:32",revision=5233]]
 local Transform = require"transform"
 local Utils = require"utils"
 local quat = require"quaternions"
@@ -23,7 +23,7 @@ local function get_rot()
 end
 
 local function get_vol(pos)
-	return mid((e-log(pos:distance(cam_pos)))/e,0,0.7)
+	return mid((1-log(pos:distance(cam_pos))/e),0,0.7)
 end
 
 local function update()
@@ -53,7 +53,6 @@ local function set_target(target)
 end
 
 return {
-	get_mat = get_mat,
 	get_pos = get_pos,
 	get_rot = get_rot,
 	update = update,

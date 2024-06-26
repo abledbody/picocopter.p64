@@ -1,23 +1,24 @@
---[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-06-25 21:58:13",revision=15032]]
+--[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-06-26 05:22:32",revision=15377]]
 include"require.lua"
 include"profiler.lua"
 
 profile.enabled(false,true)
 
-local Physics = require"physics"
 local Rendering = require"rendering"
 local Transform = require"transform"
 local Utils = require"utils"
 local Helicopter = require"helicopter"
 local Camera = require"camera"
-local apply_materials = require"material_applier"
+local import_pcm = require"pcm_importer"
+local materials = require"materials"
+local quat = require"quaternions"
 
-local t_flat = apply_materials(unpod(fetch("mdl/TerrainFlat.pcm")))
-local t_slope = apply_materials(unpod(fetch("mdl/TerrainSlope.pcm")))
-local t_in = apply_materials(unpod(fetch("mdl/TerrainIn.pcm")))
-local t_out = apply_materials(unpod(fetch("mdl/TerrainOut.pcm")))
-local t_cross = apply_materials(unpod(fetch("mdl/TerrainCross.pcm")))
-local building = apply_materials(unpod(fetch("mdl/Building1.pcm")))
+local t_flat = import_pcm("mdl/TerrainFlat.pcm",materials)
+local t_slope = import_pcm("mdl/TerrainSlope.pcm",materials)
+local t_in = import_pcm("mdl/TerrainIn.pcm",materials)
+local t_out = import_pcm("mdl/TerrainOut.pcm",materials)
+local t_cross = import_pcm("mdl/TerrainCross.pcm",materials)
+local building = import_pcm("mdl/Building1.pcm",materials)
 
 srand(1304145)
 local heightmap = {}
@@ -53,8 +54,12 @@ for y = -10,11 do
 	end
 end
 
+local function get_chunk_pos(x,y)
+	return x/16+0.5,y/16+0.5
+end
+
 function get_height(x,y)
-	local mapx,mapy = x/16+0.5,y/16+0.5
+	local mapx,mapy = get_chunk_pos(x,y)
 	local y_arr = heightmap[flr(mapy)]
 	nw = y_arr and y_arr[flr(mapx)] or 0
 	ne = y_arr and y_arr[ceil(mapx)] or 0

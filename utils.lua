@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-05-22 18:39:52",modified="2024-06-25 21:58:13",revision=7933]]
+--[[pod_format="raw",created="2024-05-22 18:39:52",modified="2024-06-26 05:22:32",revision=8221]]
 local Utils = {}
 
 function Utils.ident_4x4()
@@ -16,11 +16,11 @@ function Utils.print_mat(matrix,x,y,col)
 	local str = ""
 	local w = matrix:width()
 	for _y = 0,(matrix:height() or 1)-1 do
-		str ..= "["
+		str = str.."["
 		for _x = 0,w-1 do
-			str ..= string.format("%.1f",matrix[_x+_y*w])..","
+			str = str..string.format("%.1f",matrix[_x+_y*w])..","
 		end
-		str ..= "]\n"
+		str = str.."]\n"
 	end
 	print(str,x,y,col)
 	return str

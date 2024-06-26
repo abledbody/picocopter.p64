@@ -82,10 +82,4 @@ return {
 	rot_z = rot_z,
 	rotate = rotate,
 	scale = scale,
-	quat = quat,
-	quatnorm = quatnorm,
-	quatmul = quatmul,
-	vquatmul = vquatmul,
-	quat_mat = quat_mat,
-	quat_dtf = quat_dtf,
 }
