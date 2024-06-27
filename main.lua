@@ -60,6 +60,7 @@ end
 
 function get_height(x,y)
 	local mapx,mapy = get_chunk_pos(x,y)
+	mapx,mapy = mid(mapx,-10,11),mid(mapy,-10,11)
 	local y_arr = heightmap[flr(mapy)]
 	nw = y_arr and y_arr[flr(mapx)] or 0
 	ne = y_arr and y_arr[ceil(mapx)] or 0
