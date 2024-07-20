@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-06-09 05:13:18",modified="2024-06-26 22:47:36",revision=5298]]
+--[[pod_format="raw",created="2024-06-09 05:13:18",modified="2024-07-19 23:16:27",revision=7343]]
 local Transform = require"transform"
 local Utils = require"utils"
 local quat = require"quaternions"
@@ -7,7 +7,7 @@ local log = math.log
 
 local cam_pos = vec(0,2,3)
 local cam_rot = vec(0,0,0,1)
-local cam_offset = vec(0,2,3)
+local cam_offset = vec(0,3,6)
 local pitch = -0.08
 local yaw = 0
 local follow_target
@@ -23,7 +23,7 @@ local function get_rot()
 end
 
 local function get_vol(pos)
-	return mid((1-log(pos:distance(cam_pos))/e),0,0.7)
+	return mid((1-log(pos:distance(cam_pos)*0.5)/e),0,0.7)
 end
 
 local function update()
@@ -33,10 +33,10 @@ local function update()
 		local target_vel = vec(follow_target.velocity.x,0,follow_target.velocity.z)
 		local offset = vec(0,0,0)
 		if target_vel.x != 0 or target_vel.z != 0 then
-			offset = (target_vel/target_vel:magnitude()*-9)
+			offset = (target_vel/target_vel:magnitude()*-14)
 		end
-		offset = vec(offset.x,3,offset.z)
-		cam_offset = Utils.lerp(cam_offset,offset,1-1/(target_vel:magnitude()*0.001+1))
+		offset = vec(offset.x,5,offset.z)
+		cam_offset = Utils.lerp(cam_offset,offset,1-1/(target_vel:magnitude()*0.0015+1))
 		cam_pos = follow_target.position+cam_offset
 		yaw = atan2(follow_target.position.x-cam_pos.x,follow_target.position.z-cam_pos.z)-0.25
 		pitch = Utils.lerp(pitch,1-1/(1+follow_target.velocity.y*0.01)-0.08,0.05)

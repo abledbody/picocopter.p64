@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-06-14 20:38:40",modified="2024-06-26 22:47:36",revision=3889]]
+--[[pod_format="raw",created="2024-06-14 20:38:40",modified="2024-07-03 20:39:10",revision=4928]]
 local function new(_,dir,angle)
 	local out = vec(dir.x,dir.y,dir.z,0)*-sin(angle*0.5)
 	out[3] = cos(angle*0.5)
@@ -80,6 +80,18 @@ local function swing(quat,twist)
 	return swing
 end
 
+local function axis(quat)
+	local axis = quat:copy(quat,nil,0,0,3)
+	return axis/axis:magnitude() or vec(0,1,0)
+end
+
+local function angle(quat,dir)
+	local w = quat[3]
+	local theta = atan2(w,sqrt(1-w*w))*2
+	local axis = axis(quat)
+	return theta*sgn(dir:dot(axis))
+end
+
 local function slerp(a,b,t)
 	local y = sqrt(1-b[3]*b[3])
 	local angle = atan2(b[3],y)
@@ -100,6 +112,7 @@ local quat = {
 	twist = twist,
 	swing = swing,
 	slerp = slerp,
+	angle = angle,
 }
 setmetatable(quat,quat)
 

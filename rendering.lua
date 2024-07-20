@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-05-22 18:18:28",modified="2024-06-26 22:47:36",revision=17205]]
+--[[pod_format="raw",created="2024-05-22 18:18:28",modified="2024-07-19 23:44:00",revision=18303]]
 local Utils = require"utils"
 local sort = Utils.sort
 local Transform = require"transform"
@@ -19,6 +19,7 @@ local frust_norm_y = vec(0,-1,0)
 local view_mat = Utils.ident_4x4()
 local dirty_vp = false
 local vp_mat = Utils.ident_4x4()
+-- Clip to screen
 local cts_mul = vec(vid_res.x/2,-vid_res.y/2,-vid_res.y/2)
 local cts_add = vec(vid_res.x,vid_res.y,vid_res.y)/2
 
@@ -190,6 +191,7 @@ local function draw_flat_tri(properties,p1,p2,p3)
 	local y1,y2,y3,x1,x2,x3 = p1.y,p2.y,p3.y,p1.x,p2.x,p3.x
 	
 	-- Generate a vertex on the opposite side from p2 via interpolation
+	
 	local dy = y2-y1
 	local div_t = dy/(y3-y1)
 	local xd = (x3-x1)*div_t+x1
@@ -250,9 +252,9 @@ function clip_tri(model)
 		if not skip_tris[i] then
 			local i1,i2,i3 = indices:get(0,i,3)
 			local p1,p2,p3 =
-				pts:copy(pts,nil,i1,0,4),
-				pts:copy(pts,nil,i2,0,4),
-				pts:copy(pts,nil,i3,0,4)
+				pts:row(i1),
+				pts:row(i2),
+				pts:row(i3)
 			local w1,w2,w3 = p1[3],p2[3],p3[3]
 			
 			-- The near clipping plane is the only one that's actually clipped.
@@ -273,12 +275,12 @@ function clip_tri(model)
 			else
 				if n1 or n2 or n3 then
 					skip_tris[i] = true
-					local iuv = i*6
+					local iuv = i*3
 					
 					local uv1,uv2,uv3 =
-						uvs:copy(uvs,nil,iuv,0,2),
-						uvs:copy(uvs,nil,iuv+2,0,2),
-						uvs:copy(uvs,nil,iuv+4,0,2)
+						uvs:row(iuv),
+						uvs:row(iuv+1),
+						uvs:row(iuv+2)
 					
 					local outside = {} -- Refers to the clipping plane.
 					local inside = {}
@@ -346,7 +348,7 @@ function clip_tri(model)
 			uv3[0],uv3[1]
 		)
 		
-		gen_indices:set(0,tri_i,vert_i*4,vert_i*4+4,vert_i*4+8)
+		gen_indices:set(0,tri_i,vert_i,vert_i+1,vert_i+2)
 		gen_materials[tri_i] = verts[4]
 		gen_depths[tri_i] = verts[5]
 		
@@ -394,7 +396,7 @@ function clip_tri(model)
 			uv4[0],uv4[1]
 		)
 		
-		local i1,i2,i3,i4 = vert_i*4,vert_i*4+4,vert_i*4+8,vert_i*4+12
+		local i1,i2,i3,i4 = vert_i,vert_i+1,vert_i+2,vert_i+3
 		gen_indices:set(0,tri_i,
 			i1,i2,i3,
 			i3,i2,i4
@@ -432,15 +434,14 @@ function Rendering.draw_all()
 			if not skip_tris[j] then
 				local it = j*3
 				local p1,p2,p3 =
-					pts:copy(pts,nil,indices[it],0,4),
-					pts:copy(pts,nil,indices[it+1],0,4),
-					pts:copy(pts,nil,indices[it+2],0,4)
+					pts:row(indices[it]),
+					pts:row(indices[it+1]),
+					pts:row(indices[it+2])
 				
-				local iuv = it*2
 				local uv1,uv2,uv3 =
-					uvs:copy(uvs,nil,iuv,0,4),
-					uvs:copy(uvs,nil,iuv+2,0,4),
-					uvs:copy(uvs,nil,iuv+4,0,4)
+					uvs:row(it),
+					uvs:row(it+1),
+					uvs:row(it+2)
 				
 				local material = materials[j]
 				local shader,properties = material.shader,material.properties
@@ -464,15 +465,15 @@ function Rendering.draw_all()
 			for j = 0,gen_indices:height()-1 do
 				local it = j*3
 				local p1,p2,p3 =
-					gen_pts:copy(gen_pts,nil,gen_indices[it],0,4),
-					gen_pts:copy(gen_pts,nil,gen_indices[it+1],0,4),
-					gen_pts:copy(gen_pts,nil,gen_indices[it+2],0,4)
+					gen_pts:row(gen_indices[it]),
+					gen_pts:row(gen_indices[it+1]),
+					gen_pts:row(gen_indices[it+2])
 				
 				local iuv = it*2
 				local uv1,uv2,uv3 =
-					gen_uvs:copy(gen_uvs,nil,iuv,0,4),
-					gen_uvs:copy(gen_uvs,nil,iuv+2,0,4),
-					gen_uvs:copy(gen_uvs,nil,iuv+4,0,4)
+					gen_uvs:row(it),
+					gen_uvs:row(it+1),
+					gen_uvs:row(it+2)
 					
 				local material = gen_materials[j]
 				local shader,properties = material.shader,material.properties
@@ -566,16 +567,42 @@ function Rendering.line(p1,p2,col,mat)
 	if dirty_vp then
 		vp_mat = view_mat:matmul(proj_mat)
 	end
+	
 	local mvp = mat:matmul(vp_mat)
-	local p1,p2 =
-		project_point(p1:matmul(mvp)):mul(cts_mul,true,0,0,3):add(cts_add,true,0,0,3),
-		project_point(p2:matmul(mvp)):mul(cts_mul,true,0,0,3):add(cts_add,true,0,0,3)
+	p1,p2 = p1:matmul(mvp),p2:matmul(mvp)
+	if	   p1.z >  p1[3] or  p2.z >  p2[3]
+		or p1.z < -p1[3] and p2.z < -p2[3]
+		or p1.x >  p1[3] and p2.x >  p2[3]
+		or p1.x < -p1[3] and p2.x < -p2[3]
+		or p1.y >  p1[3] and p2.y >  p2[3]
+		or p1.y < -p1[3] and p2.y < -p2[3]
+	then return end
+	p1,p2 =
+		project_point(p1):mul(cts_mul,true,0,0,3):add(cts_add,true,0,0,3),
+		project_point(p2):mul(cts_mul,true,0,0,3):add(cts_add,true,0,0,3)
 	local z = (p1.z+p2.z)*0.5
 	add(draw_queue,{
 		func = function() line(p1.x,p1.y,p2.x,p2.y,col) end,
 		z = z*z
 	})
 end
+
+--[[
+local function Rendering.billboard(tex,mat,pivot)
+	if dirty_vp then
+		vp_mat = view_mat:matmul(proj_mat)
+	end
+	local mvp = mat:matmul(vp_mat)
+	local pts = vec(0,0,0,1)
+	pts = pts:matmul(mvp)
+	if pts.z > pts[3] then return end
+	local left = pts.x-pivot.x*pts[3]
+	local right = left+tex:width()*pts[3]
+	
+	for y = 0,tex:height() do
+		tline3d(tex,
+	end
+end]]
 
 Rendering.draw_tri = draw_tri
 Rendering.draw_flat_tri = draw_flat_tri
