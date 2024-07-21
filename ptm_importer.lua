@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-06-04 05:42:45",modified="2024-07-19 23:43:59",revision=9579]]
+--[[pod_format="raw",created="2024-06-04 05:42:45",modified="2024-07-21 00:57:37",revision=9586]]
 return function(path,material_lookup)
 	local ptm_model
 	if type(path) == "string" then

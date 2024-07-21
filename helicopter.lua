@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-06-09 04:49:34",modified="2024-07-19 23:16:27",revision=8575]]
+--[[pod_format="raw",created="2024-06-09 04:49:34",modified="2024-07-21 00:57:38",revision=8578]]
 local Rendering = require"rendering"
 local Transform = require"transform"
 local dtf = Transform.double_transform
@@ -41,12 +41,9 @@ local function update()
 		(btn(8) or 0)/255-(btn(9) or 0)/255,
 		(btn(2) or 0)/255-(btn(3) or 0)/255
 	)
-	body:torque(vec(0,-50,0))
-	local tail_rotor_force = quat.vmul(vec(input_vec.y*3+11,0,0),body.rotation)
-	local tail_rotor_point = quat.vmul(vec(-0.197,0.939,4.488),body.rotation)
-	body:force_at_point(tail_rotor_force,tail_rotor_point)
+	
 	input_vec *= vec(abs(input_vec.x),abs(input_vec.y),abs(input_vec.z))
-	body.angular_velocity += input_vec*vec(0.05,0,0.05)/60
+	body.angular_velocity += input_vec*vec(0.05,0.025,0.05)/60
 	body.angular_velocity *= vec(0.8,0.94,0.8)
 	
 	local slip = quat.vmul(body.velocity,quat.inv(body.rotation))
@@ -60,13 +57,9 @@ local function update()
 		and (min_collect-9.8)*-input_vec[3]+9.8
 		or (max_collect-9.8)*input_vec[3]+9.8)
 		/60
-	local rotor_dir = vec(-1,10,1.2)
-	rotor_dir /= rotor_dir:magnitude()
-	rotor_dir = quat.vmul(rotor_dir,body.rotation)
-	local rotor_force = rotor_dir*(throttle*375*etl)
-	local rotor_point = quat.vmul(rotor_pos,body.rotation)
-	body:force_at_point(rotor_force,rotor_point)
+	body:force(up*throttle*375*etl)
 	body:force(body.velocity*-body.velocity:magnitude()*0.5)
+	
 	body:physics_step()
 	
 	rotor_rot += 0.111

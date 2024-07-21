@@ -1,8 +1,9 @@
---[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-07-19 23:43:59",revision=18556]]
+--[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-07-21 00:57:37",revision=18565]]
 include"require.lua"
 include"profiler.lua"
 
 profile.enabled(false,true)
+local show_forces = false
 
 local Rendering = require"rendering"
 local Transform = require"transform"
@@ -107,6 +108,7 @@ heli_body.position = vec(mapw*chunk_size*0.5,0,maph*chunk_size*0.5)
 heli_body.position.y = get_height(heli_body.position.x,heli_body.position.z)
 
 function update_game()
+	force_display = {}
 	Helicopter.update()
 	Camera.update()
 end
@@ -183,16 +185,17 @@ local function draw_game()
 	Rendering.draw_all()
 	
 	-- Forces
-	for i = 1,#force_display do
-		local force = force_display[i]
-		local pt = vec(0,0,0,1):add(force[1],true)
-		Rendering.line(
-			pt,
-			pt+force[2]*0.1,
-			force[3],Utils.ident_4x4())
+	if show_forces then
+		for i = 1,#force_display do
+			local force = force_display[i]
+			local pt = vec(0,0,0,1):add(force[1],true)
+			Rendering.line(
+				pt,
+				pt+force[2]*0.1,
+				force[3],Utils.ident_4x4())
+		end
+		Rendering.draw_all()
 	end
-	force_display = {}
-	Rendering.draw_all()
 	
 	draw_map(0,0)
 	
