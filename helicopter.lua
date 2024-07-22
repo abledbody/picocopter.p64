@@ -13,7 +13,8 @@ local r22_rotor = import_ptm("mdl/r22Rotor.ptm",materials)
 local r22_tail_rotor = import_ptm("mdl/r22TailRotor.ptm",materials)
 local shadow = import_ptm("mdl/Shadow.ptm",materials)
 
-local body = Physics.new_rigidbody(vec(0,0,0),375,1000)
+local mass = 375
+local body = Physics.new_rigidbody(vec(0,0,0),mass,200)
 local floor_height = 0
 local min_collect,max_collect = 2,14
 
@@ -30,44 +31,63 @@ local shadow_scale_mat,shadow_scale_imat = dtf(Transform.scale,vec(1.5,1.5,1.5))
 Camera.set_target(body)
 
 local function update()
-	local up = quat.vmul(vec(0,1,0),body.rotation)
-	local forward = quat.vmul(vec(0,0,-1),body.rotation)
-	local right = quat.vmul(vec(1,0,0),body.rotation)
-	body:accelerate(vec(0,-9.8/60,0))
+	local rotation = body.rotation
 	
+	--Input
 	local input_vec = vec(
 		(btn(11) or 0)/255-(btn(10) or 0)/255,
 		(btn(0) or 0)/255-(btn(1) or 0)/255,
 		(btn(8) or 0)/255-(btn(9) or 0)/255,
 		(btn(2) or 0)/255-(btn(3) or 0)/255
 	)
-	
 	input_vec *= vec(abs(input_vec.x),abs(input_vec.y),abs(input_vec.z))
-	body.angular_velocity += input_vec*vec(0.05,0.025,0.05)/60
-	body.angular_velocity *= vec(0.8,0.94,0.8)
 	
-	local slip = quat.vmul(body.velocity,quat.inv(body.rotation))
-	local sqr_slip = vec(abs(slip.x),abs(slip.y),abs(slip.z))*slip
-	body.angular_velocity +=
-		vec(-sqr_slip.z*0.00004,-sqr_slip.x*0.0004,sqr_slip.x*0.00004)/60
+	-- Gravity
+	body:accelerate(vec(0,-9.8,0))
 	
-	local etl = mid((body.velocity:magnitude()-1)*0.03,0,0.3)+1
-	
+	-- Thrust
+	local up = quat.vmul(vec(0,1,0),rotation)
+	local speed = body.velocity:magnitude()
 	local throttle = (input_vec[3] < 0
 		and (min_collect-9.8)*-input_vec[3]+9.8
 		or (max_collect-9.8)*input_vec[3]+9.8)
-		/60
-	body:force(up*throttle*375*etl)
-	body:force(body.velocity*-body.velocity:magnitude()*0.5)
+	local etl = mid((speed-1)*0.03,0,0.3)+1
+	body:force(up*throttle*mass*etl)
+	
+	-- Torque
+	body:torque(input_vec*vec(100,60,100))
+	
+	-- Angular drag
+	local a_drag = body.angular_velocity*body.angular_velocity:magnitude()*-2000
+	body:torque(a_drag)
+	
+	-- Drag
+	local drag = body.velocity*speed*-30
+	body:force(drag)
+	
+	-- Tail drag
+	local left = quat.vmul(vec(-1,0,0),rotation)
+	local tail_drag = quat.vmul(body:velocity_at_point(tail_rotor_pos),quat.inv(rotation)).x
+	tail_drag *= abs(tail_drag)*0.2
+	body:force_at_point(left*tail_drag,quat.vmul(tail_rotor_pos,rotation))
+	
+	-- Precession
+	local slip = quat.vmul(body.velocity,quat.inv(rotation))
+	local sqr_slip = vec(abs(slip.x),abs(slip.y),abs(slip.z))*slip
+	body:torque(vec(-sqr_slip.z,0,sqr_slip.x)*0.3)
 	
 	body:physics_step()
 	
+	-- Animation
 	rotor_rot += 0.111
 	tail_rotor_rot += 0.154
+	
+	-- Sound
 	local vol = Camera.get_vol(body.position)*100
 	note(0,5,vol,0,0,9,false)
 	note(0,6,vol,0,0,10,false)
 	
+	-- Collision
 	floor_height = get_height(body.position.x,body.position.z)
 	local center_from_floor = floor_height+0.9
 

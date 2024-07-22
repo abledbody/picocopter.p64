@@ -5,6 +5,23 @@ local function new(_,dir,angle)
 	return out
 end
 
+local function from_euler(euler)
+	euler *= 0.5
+	local cx = cos(euler.x)
+	local cy = cos(euler.y)
+	local cz = cos(euler.z)
+	local sx = -sin(euler.x)
+	local sy = -sin(euler.y)
+	local sz = -sin(euler.z)
+	
+	return vec(
+		sx*cy*cz + cx*sy*sz,
+		cx*sy*cz - sx*cy*sz,
+		cx*cy*sz + sx*sy*cz,
+		cx*cy*cz - sx*sy*sz
+	)
+end
+
 local function mul(a,b)
 	local qq = a*b
 	local awb,axb,ayb,azb =
@@ -102,6 +119,7 @@ end
 
 local quat = {
 	__call = new,
+	from_euler = from_euler,
 	mul = mul,
 	vmul = vmul,
 	norm = norm,

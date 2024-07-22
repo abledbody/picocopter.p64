@@ -3,7 +3,7 @@ include"require.lua"
 include"profiler.lua"
 
 profile.enabled(false,true)
-local show_forces = false
+local show_forces = true
 
 local Rendering = require"rendering"
 local Transform = require"transform"
