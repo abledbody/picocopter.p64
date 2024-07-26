@@ -29,6 +29,8 @@ end
 function Utils.lerp(a,b,t) return (b-a)*t+a end
 function Utils.invlerp(a,b,x) return (x-a)/(b-a) end
 function Utils.remap(x,a1,b1,a2,b2) return (b2-a2)*(x-a1)/(b1-a1)+a2 end
+function Utils.asin(x) return atan2(sqrt(1-x*x),x) end
+function Utils.acos(x) return atan2(x,sqrt(1-x*x)) end
 
 -- An implementation of QuickSort which does not allocate new tables.
 -- Mutates the provided table.
