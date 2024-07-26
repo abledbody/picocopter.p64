@@ -1,9 +1,9 @@
---[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-07-21 00:57:37",revision=18565]]
+--[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-07-26 02:39:23",revision=18596]]
 include"require.lua"
 include"profiler.lua"
 
 profile.enabled(false,true)
-local show_forces = true
+local show_forces = false
 
 local Rendering = require"rendering"
 local Transform = require"transform"

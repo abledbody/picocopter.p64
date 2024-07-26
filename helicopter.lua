@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-06-09 04:49:34",modified="2024-07-21 00:57:38",revision=8578]]
+--[[pod_format="raw",created="2024-06-09 04:49:34",modified="2024-07-26 02:39:23",revision=8612]]
 local Rendering = require"rendering"
 local Transform = require"transform"
 local dtf = Transform.double_transform
@@ -79,8 +79,8 @@ local function update()
 	body:physics_step()
 	
 	-- Animation
-	rotor_rot += 0.111
-	tail_rotor_rot += 0.154
+	rotor_rot += 0.1166666666666
+	tail_rotor_rot += 0.9166666
 	
 	-- Sound
 	local vol = Camera.get_vol(body.position)*100
