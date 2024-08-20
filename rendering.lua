@@ -117,19 +117,18 @@ local function draw_tri(properties,p1,p2,p3,uv1,uv2,uv3)
 	
 	-- Generate a vertex on the opposite side from p2 via interpolation
 	local dy = y2-y1
-	local div_t = dy/(y3-y1)
 	local v1,v2,v3 = 
 		vec(p1.x,uv1.x,uv1.y,w1),
 		vec(p2.x,uv2.x,uv2.y,w2),
 		vec(p3.x,uv3.x,uv3.y,w3)
-	local vd = (v3-v1)*div_t+v1
 	
 	local e = userdata("f64",8)
 	local slope = userdata("f64",8)
 	
 	-- Do the top half of the triangle
+	local major_slope = (v3-v1)/(y3-y1)
 	if dy >= 1 then
-		slope:copy((vd-v1)/dy,true)
+		slope:copy(major_slope,true)
 		slope:copy((v2-v1)/dy,true,0,4)
 	end
 	local max_y = vid_res.y
@@ -142,9 +141,8 @@ local function draw_tri(properties,p1,p2,p3,uv1,uv2,uv3)
 	profile("Triangle iteration")
 	while y < y_end do
 		tline3d(tex,e[0],y,e[4],y,e[1],e[2],e[5],e[6],e[3],e[7],0x100)
-		y += 1
 		e:add(slope,true)
-		--if btn(4) then flip() end
+		y += 1
 	end
 	profile("Triangle iteration")
 	
@@ -152,13 +150,13 @@ local function draw_tri(properties,p1,p2,p3,uv1,uv2,uv3)
 	-- Then the bottom
 	dy = y3-y2
 	if dy >= 1 then
-		slope:copy((v3-vd)/dy,true)
+		slope:copy(major_slope,true)
 		slope:copy((v3-v2)/dy,true,0,4)
 	else
 		slope:mul(0,true)
 	end
 	y_end = y3 < max_y and ceil(y3) or max_y
-	e:copy(vd,true)
+	e:copy(v3-major_slope*dy,true)
 	e:copy(v2,true,0,4)
 	e:add(slope*(y-y2),true)
 	profile("Triangle setup")
@@ -168,7 +166,6 @@ local function draw_tri(properties,p1,p2,p3,uv1,uv2,uv3)
 		tline3d(tex,e[0],y,e[4],y,e[1],e[2],e[5],e[6],e[3],e[7],0x100)
 		e:add(slope,true)
 		y += 1
-		--if btn(4) then flip() end
 	end
 	profile("Triangle iteration")
 end
@@ -193,15 +190,14 @@ local function draw_flat_tri(properties,p1,p2,p3)
 	-- Generate a vertex on the opposite side from p2 via interpolation
 	
 	local dy = y2-y1
-	local div_t = dy/(y3-y1)
-	local xd = (x3-x1)*div_t+x1
 	
 	local e = userdata("f64",2)
 	local slope = userdata("f64",2)
+	local major_slope = (x3-x1)/(y3-y1)
 	
 	-- Do the top half of the triangle
 	if dy >= 1 then
-		slope[0] = (xd-x1)/dy
+		slope[0] = major_slope
 		slope[1] = (x2-x1)/dy
 	end
 	local max_y = vid_res.y
@@ -223,13 +219,13 @@ local function draw_flat_tri(properties,p1,p2,p3)
 	-- Then the bottom
 	dy = y3-y2
 	if dy >= 1 then
-		slope[0] = (x3-xd)/dy
+		slope[0] = major_slope
 		slope[1] = (x3-x2)/dy
 	else
 		slope:mul(0,true)
 	end
 	y_end = y3 < max_y and ceil(y3) or max_y
-	e[0] = xd
+	e[0] = x3-major_slope*dy
 	e[1] = x2
 	e:add(slope*(y-y2),true)
 	profile("Triangle setup")
