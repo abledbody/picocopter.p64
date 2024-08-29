@@ -50,8 +50,9 @@ return function(col,p1,p2,p3,uv1,uv2,uv3,screen_height)
 	
 	-- The edges meet at p1.
 	local edges = vec(x1,x1)
-	-- If there's a difference between y1 and y, it means that v1 is
-	-- not on the first drawable row, so we look ahead to where it is.
+	-- There's always a difference between y and y1, since y1 pretty
+	-- much never lies exactly on a drawable scanline. To compensate,
+	-- we move down the slopes to where there is one.
 	edges:add(slopes*(y-y1),true)
 	profile("Triangle setup")
 	

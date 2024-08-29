@@ -99,7 +99,8 @@ t_uvs:set(0,0,
 	0,1,
 	1,1
 )
-local t_mats = {"Grass","Grass"}
+local t_mats = {"Grass"}
+local t_mat_indices = vec(1,1)
 
 local test = userdata("u8",mapw,maph)
 
@@ -258,8 +259,10 @@ local gen_co = cocreate(function()
 						pts=pts,
 						uvs=t_uvs,
 						materials=t_mats,
+						
 						pt_indices=t_pt_indices,
 						uv_indices=t_uv_indices,
+						material_indices=t_mat_indices
 					},
 					materials
 				)

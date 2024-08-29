@@ -9,8 +9,8 @@ return function(path,material_lookup)
 	
 	local ptm_pts,ptm_uvs,ptm_mats =
 		ptm_model.pts,ptm_model.uvs,ptm_model.materials
-	local pt_indices,uv_indices =
-		ptm_model.pt_indices,ptm_model.uv_indices
+	local pt_indices,uv_indices,mat_indices =
+		ptm_model.pt_indices,ptm_model.uv_indices,ptm_model.material_indices
 	
 	-- .pcm file indices refer to matrix rows, but flat indices are faster
 	-- and more convenient for userdata operations.
@@ -58,7 +58,7 @@ return function(path,material_lookup)
 	local sorting_points = userdata("f64",3,tri_count)
 	
 	for i = 0,tri_count-1 do
-		local mat_name = ptm_mats[i+1]
+		local mat_name = ptm_mats[mat_indices[i]]
 		local mtl = material_lookup[mat_name]
 		assert(mtl,"Could not find material "..mat_name)
 		

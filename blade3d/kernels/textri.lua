@@ -68,10 +68,11 @@ return function(tex,p1,p2,p3,uv1,uv2,uv3,screen_height)
 	
 	-- This gets indexed a lot, so e is shorthand for "edges".
 	local e = userdata("f64",8)
-	-- The edges meet at p1, so we copy the values from v1.
+	-- The edges meet at p1, so we copy the values from v1 twice.
 	e:copy(v1,true,0,0,4,0,4,2)
-	-- If there's a difference between y1 and y, it means that p1 is
-	-- not on the first drawable row, so we look ahead to where it is.
+	-- There's always a difference between y and y1, since y1 pretty
+	-- much never lies exactly on a drawable scanline. To compensate,
+	-- we move down the slopes to where there is one.
 	e:add(slopes*(y-y1),true)
 	profile("Triangle setup")
 	
