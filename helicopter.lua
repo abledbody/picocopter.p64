@@ -1,8 +1,8 @@
---[[pod_format="raw",created="2024-06-09 04:49:34",modified="2024-07-26 02:39:23",revision=8612]]
-local Rendering = require"rendering"
-local Transform = require"transform"
+--[[pod_format="raw",created="2024-06-09 04:49:34",modified="2024-08-28 23:16:33",revision=8617]]
+local Rendering = require"blade3d.rendering"
+local Transform = require"blade3d.transform"
 local dtf = Transform.double_transform
-local quat = require"quaternions"
+local quat = require"blade3d.quaternions"
 local Physics = require"physics"
 local Camera = require"camera"
 local import_ptm = require"ptm_importer"

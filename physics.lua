@@ -1,7 +1,7 @@
 --[[pod_format="raw",created="2024-05-22 17:30:22",modified="2024-07-19 23:16:27",revision=11096]]
-local Transform = require"transform"
+local Transform = require"blade3d.transform"
 local dtf = Transform.double_transform
-local quat = require"quaternions"
+local quat = require"blade3d.quaternions"
 
 local dt = 1/60
 local half_dt = dt/2

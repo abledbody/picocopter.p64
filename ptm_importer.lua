@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-06-04 05:42:45",modified="2024-07-21 00:57:37",revision=9586]]
+--[[pod_format="raw",created="2024-06-04 05:42:45",modified="2024-08-28 23:16:33",revision=9590]]
 return function(path,material_lookup)
 	local ptm_model
 	if type(path) == "string" then
@@ -64,7 +64,12 @@ return function(path,material_lookup)
 		
 		-- Transform uvs if the material uses a texture property,
 		-- because picotron uses texel coordinates, not normalized coordinates.
-		local tex = mtl.properties.tex
+		local tex
+		if type(mtl.properties) == "userdata" then
+			tex = mtl.properties
+		elseif type(mtl.properties) == "table" and mtl.properties.tex then
+			tex = mtl.properties.tex
+		end
 		if tex then
 			uvs:mul(vec(tex:width(),tex:height()),true,0,i*6,2,0,2,3)
 		end

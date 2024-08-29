@@ -1,75 +1,15 @@
---[[pod_format="raw",created="2024-05-22 18:18:28",modified="2024-07-21 00:57:37",revision=18312]]
-local Utils = require"utils"
+--[[pod_format="raw",created="2024-05-22 18:18:28",modified="2024-08-28 23:16:33",revision=18317]]
+local Utils = require"blade3d.utils"
 local sort = Utils.sort
-local Transform = require"transform"
-local quat = require"quaternions"
 
-local Rendering = {}
-
-local vid_res = vec(480,270)
-local aspect_ratio = vid_res.x/vid_res.y
-
-local cam_pos = vec(0,0,0)
-
-local proj_mat = Utils.ident_4x4()
-local proj_settings = {near=0.1,far=100,fov_slope=1}
-local frust_norm_x = vec(0,-1,0)
-local frust_norm_y = vec(0,-1,0)
-
-local view_mat = Utils.ident_4x4()
-local dirty_vp = false
-local vp_mat = Utils.ident_4x4()
--- Clip to screen
-local cts_mul = vec(vid_res.x/2,-vid_res.y/2,-vid_res.y/2)
-local cts_add = vec(vid_res.x,vid_res.y,vid_res.y)/2
+local camera
 
 local draw_queue = {}
 local model_queue = {}
 
-function Rendering.project(n,f,s)
-	local d = n-f
-	local a = aspect_ratio
-	local mat = userdata("f64",4,4)
-	mat:set(0,0,
-		  s,  0,     0, 0,
-		  0,s*a,     0, 0,
-		  0,  0,   n/d,-1,
-		  0,  0,-n*f/d, 0
-	)
-	return mat
-end
 
-function Rendering.cam(settings)
-	local fov
-	if settings.fov then
-		local fov_angle = (0.5-settings.fov/360)*0.5
-		fov = -sin(fov_angle)/cos(fov_angle)
-	end
-	proj_settings = {
-		near = settings.near or proj_settings.near,
-		far = settings.far or proj_settings.far,
-		fov_slope = settings.fov_slope or fov or proj_settings.fov_slope
-	}
-	
-	if settings.fov then
-		-- Get the normal of the frustum planes so we can get the scalar projection
-		-- of the culling sphere onto it.
-		frust_norm_x = vec(proj_settings.fov_slope,-1)
-		-- Micro-optimization to create yvec from xvec. Multiplies the first number in
-		-- x by aspect ratio and generates a new vector from it.
-		frust_norm_y = frust_norm_x:mul(aspect_ratio,false,0,0,1)
-		frust_norm_x /= frust_norm_x:magnitude()
-		frust_norm_y /= frust_norm_y:magnitude()
-	end
-	
-	proj_mat = Rendering.project(proj_settings.near,proj_settings.far,proj_settings.fov_slope)
-	dirty_vp = true
-end
-
-function Rendering.view(pos,rot)
-	cam_pos = pos
-	view_mat = Transform.translate(pos*-1):matmul3d(quat.mat(rot):transpose())
-	dirty_vp = true
+local function set_camera(cam)
+	camera = cam
 end
 
 local function project_points(pts)
@@ -94,152 +34,7 @@ local function project_point(pt)
 	return pt
 end
 
-local function draw_tri(properties,p1,p2,p3,uv1,uv2,uv3)
-	profile("Triangle setup")
-	local tex = properties.tex
-	
-	-- Sort points by y
-	if p1.y > p2.y then
-		p1,p2,uv1,uv2 = p2,p1,uv2,uv1
-	end
-	if p2.y > p3.y then
-		p2,p3,uv2,uv3 = p3,p2,uv3,uv2
-	end
-	if p1.y > p2.y then
-		p1,p2,uv1,uv2 = p2,p1,uv2,uv1
-	end
-	
-	local y1,y2,y3,w1,w2,w3 = p1.y,p2.y,p3.y,p1[3],p2[3],p3[3]
-	
-	uv1 *= w1
-	uv2 *= w2
-	uv3 *= w3
-	
-	-- Generate a vertex on the opposite side from p2 via interpolation
-	local dy = y2-y1
-	local v1,v2,v3 = 
-		vec(p1.x,uv1.x,uv1.y,w1),
-		vec(p2.x,uv2.x,uv2.y,w2),
-		vec(p3.x,uv3.x,uv3.y,w3)
-	
-	local e = userdata("f64",8)
-	local slope = userdata("f64",8)
-	
-	-- Do the top half of the triangle
-	local major_slope = (v3-v1)/(y3-y1)
-	if dy >= 1 then
-		slope:copy(major_slope,true)
-		slope:copy((v2-v1)/dy,true,0,4)
-	end
-	local max_y = vid_res.y
-	local y = y1 > 0 and ceil(y1) or 0
-	local y_end = y2 < max_y and y2 or max_y
-	e:copy(v1,true,0,0,4,0,4,2)
-	e:add(slope*(y-y1),true)
-	profile("Triangle setup")
-	
-	profile("Triangle iteration")
-	while y < y_end do
-		tline3d(tex,e[0],y,e[4],y,e[1],e[2],e[5],e[6],e[3],e[7],0x100)
-		e:add(slope,true)
-		y += 1
-	end
-	profile("Triangle iteration")
-	
-	profile("Triangle setup")
-	-- Then the bottom
-	dy = y3-y2
-	if dy >= 1 then
-		slope:copy(major_slope,true)
-		slope:copy((v3-v2)/dy,true,0,4)
-	else
-		slope:mul(0,true)
-	end
-	y_end = y3 < max_y and ceil(y3) or max_y
-	e:copy(v3-major_slope*dy,true)
-	e:copy(v2,true,0,4)
-	e:add(slope*(y-y2),true)
-	profile("Triangle setup")
-	
-	profile("Triangle iteration")
-	while y < y_end do
-		tline3d(tex,e[0],y,e[4],y,e[1],e[2],e[5],e[6],e[3],e[7],0x100)
-		e:add(slope,true)
-		y += 1
-	end
-	profile("Triangle iteration")
-end
-
-local function draw_flat_tri(properties,p1,p2,p3)
-	profile("Triangle setup")
-	local col = properties.col
-	
-	-- Sort points by y
-	if p1.y > p2.y then
-		p1,p2 = p2,p1
-	end
-	if p2.y > p3.y then
-		p2,p3 = p3,p2
-	end
-	if p1.y > p2.y then
-		p1,p2 = p2,p1
-	end
-	
-	local y1,y2,y3,x1,x2,x3 = p1.y,p2.y,p3.y,p1.x,p2.x,p3.x
-	
-	-- Generate a vertex on the opposite side from p2 via interpolation
-	
-	local dy = y2-y1
-	
-	local e = userdata("f64",2)
-	local slope = userdata("f64",2)
-	local major_slope = (x3-x1)/(y3-y1)
-	
-	-- Do the top half of the triangle
-	if dy >= 1 then
-		slope[0] = major_slope
-		slope[1] = (x2-x1)/dy
-	end
-	local max_y = vid_res.y
-	local y = y1 > 0 and ceil(y1) or 0
-	local y_end = y2 < max_y and y2 or max_y
-	e[0],e[1] = x1,x1
-	e:add(slope*(y-y1),true)
-	profile("Triangle setup")
-	
-	profile("Triangle iteration")
-	while y < y_end do
-		rectfill(e[0],y,e[1],y,col)
-		y += 1
-		e:add(slope,true)
-	end
-	profile("Triangle iteration")
-	
-	profile("Triangle setup")
-	-- Then the bottom
-	dy = y3-y2
-	if dy >= 1 then
-		slope[0] = major_slope
-		slope[1] = (x3-x2)/dy
-	else
-		slope:mul(0,true)
-	end
-	y_end = y3 < max_y and ceil(y3) or max_y
-	e[0] = x3-major_slope*dy
-	e[1] = x2
-	e:add(slope*(y-y2),true)
-	profile("Triangle setup")
-	
-	profile("Triangle iteration")
-	while y < y_end do
-		rectfill(e[0],y,e[1],y,col)
-		e:add(slope,true)
-		y += 1
-	end
-	profile("Triangle iteration")
-end
-
-function clip_tri(model)
+local function clip_tris(model)
 	local pts,uvs,indices,skip_tris,materials,depths =
 		model.pts,model.uvs,model.indices,model.skip_tris,model.materials,model.depths
 	local tri_clips = {}
@@ -409,14 +204,18 @@ function clip_tri(model)
 	return gen_pts,gen_uvs,gen_indices,gen_materials,gen_depths
 end
 
-function Rendering.draw_all()
-	local cts_mul,cts_add = cts_mul,cts_add
+local function draw_all()
+	local screen_height = camera.target:height()
+	set_draw_target(camera.target)
+	local cts_mul = camera.cts_mul
+	local cts_add = camera.cts_add
+	
 	for i = 1,#model_queue do
 		local model = model_queue[i]
 		local materials,pts,uvs,indices,skip_tris,depths =
 			model.materials,model.pts,model.uvs,model.indices,model.skip_tris,model.depths
 		profile("Near clipping")
-		local gen_pts,gen_uvs,gen_indices,gen_materials,gen_depths = clip_tri(model)
+		local gen_pts,gen_uvs,gen_indices,gen_materials,gen_depths = clip_tris(model)
 		profile("Near clipping")
 		
 		profile("Projection")
@@ -443,7 +242,7 @@ function Rendering.draw_all()
 				local shader,properties = material.shader,material.properties
 				
 				add(draw_queue,{
-					func = function() shader(properties,p1,p2,p3,uv1,uv2,uv3) end,
+					func = function() shader(properties,p1,p2,p3,uv1,uv2,uv3,screen_height) end,
 					z = depths[j]
 				})
 			end
@@ -465,7 +264,6 @@ function Rendering.draw_all()
 					gen_pts:row(gen_indices[it+1]),
 					gen_pts:row(gen_indices[it+2])
 				
-				local iuv = it*2
 				local uv1,uv2,uv3 =
 					gen_uvs:row(it),
 					gen_uvs:row(it+1),
@@ -475,7 +273,7 @@ function Rendering.draw_all()
 				local shader,properties = material.shader,material.properties
 				
 				add(draw_queue,{
-					func = function() shader(properties,p1,p2,p3,uv1,uv2,uv3) end,
+					func = function() shader(properties,p1,p2,p3,uv1,uv2,uv3,screen_height) end,
 					z = gen_depths[j]
 				})
 			end
@@ -501,28 +299,24 @@ end
 
 -- Draw requests
 
-function Rendering.in_frustum(model,mat)
+local function in_frustum(model,mat)
 	profile("Model frustum culling")
-	local cull_center = model.cull_center:matmul3d(mat:matmul3d(view_mat))
+	local cull_center = model.cull_center:matmul3d(mat:matmul3d(camera:get_view_matrix()))
 	local cull_radius = model.cull_radius
 	local depth = -cull_center.z
 	
-	local outside = depth < proj_settings.near-cull_radius
-		or depth > proj_settings.far+cull_radius
-		or vec(abs(cull_center.x),depth):dot(frust_norm_x) > cull_radius
-		or vec(abs(cull_center.y),depth):dot(frust_norm_y) > cull_radius
+	local outside = depth < camera.near_plane-cull_radius
+		or depth > camera.far_plane+cull_radius
+		or vec(abs(cull_center.x),depth):dot(camera.frust_norm_x) > cull_radius
+		or vec(abs(cull_center.y),depth):dot(camera.frust_norm_y) > cull_radius
 	profile("Model frustum culling")
 	return not outside
 end
 
-function Rendering.model(model,mat,imat)
-	if dirty_vp then
-		vp_mat = view_mat:matmul(proj_mat)
-	end
-	
+local function model(model,mat,imat)
 	profile("Backface culling")
-	local relative_cam_pos = cam_pos:matmul3d(imat)
-	skip_tris = {}
+	local relative_cam_pos = camera.position:matmul3d(imat)
+	local skip_tris = {}
 	local face_dists = model.face_dists
 	local dots = model.norms:matmul(userdata("f64",1,3):copy(relative_cam_pos,true))
 	for i = 0,#face_dists-1 do
@@ -530,7 +324,7 @@ function Rendering.model(model,mat,imat)
 	end
 	profile("Backface culling")
 	
-	local mvp = mat:matmul(vp_mat)
+	local mvp = mat:matmul(camera:get_vp_matrix())
 	local pts = model.pts:matmul(mvp)
 	
 	profile("Depth determination")
@@ -559,12 +353,8 @@ function Rendering.model(model,mat,imat)
 	return true
 end
 
-function Rendering.line(p1,p2,col,mat)
-	if dirty_vp then
-		vp_mat = view_mat:matmul(proj_mat)
-	end
-	
-	local mvp = mat:matmul(vp_mat)
+local function line3d(p1,p2,col,mat)
+	local mvp = mat:matmul(camera:get_vp_matrix())
 	p1,p2 = p1:matmul(mvp),p2:matmul(mvp)
 	if	   p1.z >  p1[3] or  p2.z >  p2[3]
 		or p1.z < -p1[3] and p2.z < -p2[3]
@@ -574,8 +364,8 @@ function Rendering.line(p1,p2,col,mat)
 		or p1.y < -p1[3] and p2.y < -p2[3]
 	then return end
 	p1,p2 =
-		project_point(p1):mul(cts_mul,true,0,0,3):add(cts_add,true,0,0,3),
-		project_point(p2):mul(cts_mul,true,0,0,3):add(cts_add,true,0,0,3)
+		project_point(p1):mul(camera.cts_mul,true,0,0,3):add(camera.cts_add,true,0,0,3),
+		project_point(p2):mul(camera.cts_mul,true,0,0,3):add(camera.cts_add,true,0,0,3)
 	local z = (p1.z+p2.z)*0.5
 	add(draw_queue,{
 		func = function() line(p1.x,p1.y,p2.x,p2.y,col) end,
@@ -583,24 +373,12 @@ function Rendering.line(p1,p2,col,mat)
 	})
 end
 
---[[
-local function Rendering.billboard(tex,mat,pivot)
-	if dirty_vp then
-		vp_mat = view_mat:matmul(proj_mat)
-	end
-	local mvp = mat:matmul(vp_mat)
-	local pts = vec(0,0,0,1)
-	pts = pts:matmul(mvp)
-	if pts.z > pts[3] then return end
-	local left = pts.x-pivot.x*pts[3]
-	local right = left+tex:width()*pts[3]
-	
-	for y = 0,tex:height() do
-		tline3d(tex,
-	end
-end]]
-
-Rendering.draw_tri = draw_tri
-Rendering.draw_flat_tri = draw_flat_tri
-
-return Rendering
+return {
+	set_camera = set_camera,
+	project_point = project_point,
+	project_points = project_points,
+	in_frustum = in_frustum,
+	model = model,
+	line = line3d,
+	draw_all = draw_all,
+}

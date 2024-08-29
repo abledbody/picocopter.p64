@@ -1,6 +1,6 @@
 --[[pod_format="raw",created="2024-06-14 20:38:40",modified="2024-07-03 20:39:10",revision=4928]]
 
-local Utils = require"utils"
+local Utils = require"blade3d.utils"
 local acos = Utils.acos
 
 local function new(_,dir,angle)

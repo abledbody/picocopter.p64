@@ -1,6 +1,4 @@
 --[[pod_format="raw",created="2024-05-23 00:40:43",modified="2024-06-14 22:18:11",revision=6156]]
-local Utils = require"utils"
-
 local function double_transform(func,data,forward,inverse)
 	local mat = func(data)
 	local imat = func(data*-1)

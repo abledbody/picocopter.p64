@@ -1,19 +1,20 @@
---[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-07-26 02:39:23",revision=18596]]
+--[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-08-28 23:16:33",revision=18600]]
 include"require.lua"
 include"profiler.lua"
 
-profile.enabled(false,true)
+profile.enabled(true,true)
 local show_forces = false
 
-local Rendering = require"rendering"
-local Transform = require"transform"
-local Utils = require"utils"
-local perlin = Utils.perlin
+local Rendering = require"blade3d.rendering"
+local Transform = require"blade3d.transform"
+local quat = require"blade3d.quaternions"
+local B3dUtils = require"blade3d.utils"
+
+local perlin = require"utils".perlin
 local Helicopter = require"helicopter"
 local Camera = require"camera"
 local import_ptm = require"ptm_importer"
 local materials = require"materials"
-local quat = require"quaternions"
 local MapGen = require"map_gen"
 
 local building = import_ptm("mdl/Building1.ptm",materials)
@@ -74,9 +75,9 @@ function get_height(x,y)
 		return Utils.lerp(nw,diag,cross_diag_t*2)
 	end]]
 	
-	local n = Utils.lerp(nw,ne,mapx%1)
-	local s = Utils.lerp(sw,se,mapx%1)
-	return Utils.lerp(n,s,mapy%1)
+	local n = B3dUtils.lerp(nw,ne,mapx%1)
+	local s = B3dUtils.lerp(sw,se,mapx%1)
+	return B3dUtils.lerp(n,s,mapy%1)
 end
 
 local chunks = {}
@@ -102,7 +103,6 @@ local t_mats = {"Grass","Grass"}
 
 local test = userdata("u8",mapw,maph)
 
-Rendering.cam{near=0.5,far=196,fov=110}
 local heli_body = Helicopter.get_body()
 heli_body.position = vec(mapw*chunk_size*0.5,0,maph*chunk_size*0.5)
 heli_body.position.y = get_height(heli_body.position.x,heli_body.position.z)
@@ -171,7 +171,7 @@ local function draw_game()
 	end
 	
 	profile("Z-sorting")
-	Utils.sort(sorted_chunks,"depth")
+	B3dUtils.sort(sorted_chunks,"depth")
 	profile("Z-sorting")
 	
 	for i = #sorted_chunks,1,-1 do
@@ -192,7 +192,7 @@ local function draw_game()
 			Rendering.line(
 				pt,
 				pt+force[2]*0.1,
-				force[3],Utils.ident_4x4())
+				force[3],B3dUtils.ident_4x4())
 		end
 		Rendering.draw_all()
 	end
