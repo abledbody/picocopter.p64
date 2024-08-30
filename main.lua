@@ -13,7 +13,7 @@ local B3dUtils = require"blade3d.utils"
 local perlin = require"utils".perlin
 local Helicopter = require"helicopter"
 local Camera = require"camera"
-local import_ptm = require"ptm_importer"
+local import_ptm = require"blade3d.ptm_importer"
 local materials = require"materials"
 local MapGen = require"map_gen"
 

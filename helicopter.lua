@@ -6,7 +6,7 @@ local dtrans,dscale =
 local quat = require"blade3d.quaternions"
 local Physics = require"physics"
 local Camera = require"camera"
-local import_ptm = require"ptm_importer"
+local import_ptm = require"blade3d.ptm_importer"
 local materials = require"materials"
 
 local r22 = import_ptm("mdl/r22.ptm",materials)

@@ -1,4 +1,18 @@
 --[[pod_format="raw",created="2024-06-04 05:42:45",modified="2024-08-30 04:00:01",revision=9598]]
+
+---Shaders draw triangles to the screen. If properties is a userdata or a table that contains a tex property, the UVs will be transformed to texel coordinates.
+---@alias Shader fun(properties:any,p1:userdata,p2:userdata,p3:userdata,uv1:userdata,uv2:userdata,uv3:userdata,screen_height:number)
+
+---@class Material
+---@field shader Shader The shader to use for rendering.
+---@field properties any The properties passed to the shader.
+
+---@alias MaterialLookup table<string,Material>
+
+---Loads and preprocesses a ptm file for use in Blade3D.
+---@param path string|table The path to the ptm file, or the ptm model itself.
+---@param material_lookup MaterialLookup A table of materials to use for the model. Keys should match the material names in the ptm file.
+---@return PtmModel @The processed model.
 return function(path,material_lookup)
 	local ptm_model
 	if type(path) == "string" then
@@ -94,6 +108,15 @@ return function(path,material_lookup)
 		sorting_points:copy((p1+p2+p3)/3,true,0,i*3,3)
 	end
 	
+	---@class PtmModel
+	---@field materials table<number,Material> A table of materials used in the model.
+	---@field pts userdata A 4xN matrix of points.
+	---@field indices userdata A 3x3N matrix of point indices.
+	---@field cull_center userdata The center of the model's bounding sphere.
+	---@field cull_radius number The radius of the model's bounding sphere.
+	---@field uvs userdata A 2x3N matrix of UV coordinates.
+	---@field norms userdata A 3xN matrix of normals.
+	---@field face_dists userdata An N-length array of distances from the origin to the planes of each face.
 	return {
 		materials = materials,
 		pts = ptm_pts,
