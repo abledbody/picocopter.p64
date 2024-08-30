@@ -1,6 +1,6 @@
 --[[pod_format="raw",created="2024-05-22 17:30:22",modified="2024-07-19 23:16:27",revision=11096]]
 local Transform = require"blade3d.transform"
-local dtf = Transform.double_transform
+local dtrans = Transform.double_translate
 local quat = require"blade3d.quaternions"
 
 local dt = 1/60
@@ -53,7 +53,7 @@ local function velocity_at_point(body,point)
 end
 
 local function transform_mat(body)
-	return dtf(Transform.translate,body.position,
+	return dtrans(body.position,
 		quat.dtf(body.rotation))
 end
 

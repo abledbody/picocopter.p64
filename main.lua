@@ -227,11 +227,10 @@ local gen_co = cocreate(function()
 					
 				local z = (nw+sw+se+ne)*0.25
 				
-				local mat,imat,model
 				heightmap:set(x,y,z,z)
 				heightmap:set(x,y+1,z,z)
-				local mat,imat = Transform.double_transform(
-					Transform.translate,vec(x*chunk_size+chunk_size/2,z,y*chunk_size+chunk_size/2))
+				local mat,imat = Transform.double_translate(
+					vec(x*chunk_size+chunk_size/2,z,y*chunk_size+chunk_size/2))
 				chunks[y][x] = {building,mat,imat}
 			end
 		end
@@ -266,8 +265,8 @@ local gen_co = cocreate(function()
 					},
 					materials
 				)
-				local mat,imat = Transform.double_transform(
-					Transform.translate,vec(x*chunk_size,z,y*chunk_size,1)
+				local mat,imat = Transform.double_translate(
+					vec(x*chunk_size,z,y*chunk_size,1)
 				)
 				chunks[y][x] = {model,mat,imat}
 			end

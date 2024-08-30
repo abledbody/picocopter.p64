@@ -1,7 +1,8 @@
 --[[pod_format="raw",created="2024-06-09 04:49:34",modified="2024-08-28 23:16:33",revision=8617]]
 local Rendering = require"blade3d.rendering"
 local Transform = require"blade3d.transform"
-local dtf = Transform.double_transform
+local dtrans,dscale =
+	Transform.double_translate,Transform.double_scale
 local quat = require"blade3d.quaternions"
 local Physics = require"physics"
 local Camera = require"camera"
@@ -19,14 +20,14 @@ local floor_height = 0
 local min_collect,max_collect = 2,14
 
 local rotor_pos = vec(0,1.7016,0.1963)
-local rotor_pos_mat,rotor_pos_imat = dtf(Transform.translate,rotor_pos)
+local rotor_pos_mat,rotor_pos_imat = dtrans(rotor_pos)
 local tail_rotor_pos = vec(-0.1973,0.9405,4.4833)
 local tail_rotor_pos_mat,tail_rotor_pos_imat =
-	dtf(Transform.translate,tail_rotor_pos,quat.dtf(quat(vec(0,0,1),0.25)))
+	dtrans(tail_rotor_pos,quat.dtf(quat(vec(0,0,1),0.25)))
 local rotor_rot = 0
 local tail_rotor_rot = 0
 
-local shadow_scale_mat,shadow_scale_imat = dtf(Transform.scale,vec(1.5,1.5,1.5))
+local shadow_scale_mat,shadow_scale_imat = dscale(vec(1.5,1.5,1.5))
 
 Camera.set_target(body)
 
@@ -106,8 +107,7 @@ local function update()
 end
 
 local function draw_shadow()
-	local mat,imat = dtf(
-		Transform.translate,
+	local mat,imat = dtrans(
 		vec(body.position.x,floor_height,body.position.z)
 	)
 	mat = shadow_scale_mat:matmul(mat)
