@@ -171,13 +171,13 @@ local function draw_game()
 		end
 	end
 	
-	profile("Z-sorting")
+	profile"Z-sorting"
 	B3dUtils.sort(sorted_chunks,"depth")
-	profile("Z-sorting")
+	profile"Z-sorting"
 	
 	for i = #sorted_chunks,1,-1 do
 		local chunk = sorted_chunks[i]
-		Rendering.model(unpack(chunk[1]))
+		Rendering.queue_model(unpack(chunk[1]))
 		Rendering.draw_all()
 	end
 	
@@ -190,7 +190,7 @@ local function draw_game()
 		for i = 1,#force_display do
 			local force = force_display[i]
 			local pt = vec(0,0,0,1):add(force[1],true)
-			Rendering.line(
+			Rendering.queue_line(
 				pt,
 				pt+force[2]*0.1,
 				force[3],B3dUtils.ident_4x4())

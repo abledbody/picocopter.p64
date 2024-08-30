@@ -90,4 +90,5 @@
 		"need-check-nil"
 	],
 	"Lua.runtime.version": "LuaJIT",
+	"editor.rulers": [82],
 }

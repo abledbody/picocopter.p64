@@ -10,7 +10,7 @@
 ---@param uv3 userdata The UV texture coordinates of the third vertex.
 ---@param screen_height number The height of the screen, used for scanline truncation.
 return function(tex,p1,p2,p3,uv1,uv2,uv3,screen_height)
-	profile("Triangle setup")
+	profile"Triangle setup"
 	
 	-- To make it so that rasterizing top to bottom is always correct,
 	-- and so that we know at which point to switch the minor side's slope,
@@ -74,18 +74,18 @@ return function(tex,p1,p2,p3,uv1,uv2,uv3,screen_height)
 	-- much never lies exactly on a drawable scanline. To compensate,
 	-- we move down the slopes to where there is one.
 	e:add(slopes*(y-y1),true)
-	profile("Triangle setup")
+	profile"Triangle setup"
 	
-	profile("Triangle iteration")
+	profile"Triangle iteration"
 	-- And now, we iterate over the rows, until reaching y2.
 	while y < y_end do
 		tline3d(tex,e[0],y,e[4],y,e[1],e[2],e[5],e[6],e[3],e[7],0x100)
 		e:add(slopes,true)
 		y += 1
 	end
-	profile("Triangle iteration")
+	profile"Triangle iteration"
 	
-	profile("Triangle setup")
+	profile"Triangle setup"
 	-- Now we do y2 to y3.
 	dy = y3-y2
 	if dy >= 1 then
@@ -107,13 +107,13 @@ return function(tex,p1,p2,p3,uv1,uv2,uv3,screen_height)
 	e:copy(v3-major_slope*dy,true)
 	e:copy(v2,true,0,4)
 	e:add(slopes*(y-y2),true)
-	profile("Triangle setup")
+	profile"Triangle setup"
 	
-	profile("Triangle iteration")
+	profile"Triangle iteration"
 	while y < y_end do
 		tline3d(tex,e[0],y,e[4],y,e[1],e[2],e[5],e[6],e[3],e[7],0x100)
 		e:add(slopes,true)
 		y += 1
 	end
-	profile("Triangle iteration")
+	profile"Triangle iteration"
 end

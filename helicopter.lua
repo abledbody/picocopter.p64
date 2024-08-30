@@ -111,7 +111,7 @@ local function draw_shadow()
 		vec(body.position.x,floor_height,body.position.z)
 	)
 	mat = shadow_scale_mat:matmul(mat)
-	Rendering.model(shadow,mat,imat)
+	Rendering.queue_model(shadow,mat,imat)
 end
 
 local function draw()
@@ -129,20 +129,18 @@ local function draw()
 		tail_rotor_mat:matmul3d(tail_rotor_pos_mat):matmul3d(model_mat),
 		model_imat:matmul3d(tail_rotor_pos_imat):matmul3d(tail_rotor_imat)
 	
-	local cam_pos = Camera.get_pos()
+	Rendering.queue_model(r22,model_mat,model_imat)
+	Rendering.queue_model(r22_rotor,rotor_mat,rotor_imat)
+	Rendering.queue_model(r22_tail_rotor,tail_rotor_mat,tail_rotor_imat)
 	
-	Rendering.model(r22,model_mat,model_imat)
-	Rendering.model(r22_rotor,rotor_mat,rotor_imat)
-	Rendering.model(r22_tail_rotor,tail_rotor_mat,tail_rotor_imat)
-	
-	Rendering.line(vec(-0.3569,-0.3005,-0.6508,1),vec(-0.5233,-0.8224,-0.6508,1),32,model_mat)
-	Rendering.line(vec( 0.3569,-0.3005,-0.6508,1),vec( 0.5233,-0.8224,-0.6508,1),32,model_mat)
-	Rendering.line(vec(-0.299,       0,  0.717,1),vec(-0.5233,-0.8224,  0.717,1),32,model_mat)
-	Rendering.line(vec( 0.299,       0,  0.717,1),vec( 0.5233,-0.8224,  0.717,1),32,model_mat)
-	Rendering.line(vec(-0.5233,-0.8224,-1.0465,1),vec(-0.5233,-0.8224,  0.897,1),32,model_mat)
-	Rendering.line(vec( 0.5233,-0.8224,-1.0465,1),vec( 0.5233,-0.8224,  0.897,1),32,model_mat)
-	Rendering.line(vec(-0.5233,-0.8224,-1.0465,1),vec(-0.5233,-0.6728,-1.4203,1),32,model_mat)
-	Rendering.line(vec( 0.5233,-0.8224,-1.0465,1),vec( 0.5233,-0.6728,-1.4203,1),32,model_mat)
+	Rendering.queue_line(vec(-0.3569,-0.3005,-0.6508,1),vec(-0.5233,-0.8224,-0.6508,1),32,model_mat)
+	Rendering.queue_line(vec( 0.3569,-0.3005,-0.6508,1),vec( 0.5233,-0.8224,-0.6508,1),32,model_mat)
+	Rendering.queue_line(vec(-0.299,       0,  0.717,1),vec(-0.5233,-0.8224,  0.717,1),32,model_mat)
+	Rendering.queue_line(vec( 0.299,       0,  0.717,1),vec( 0.5233,-0.8224,  0.717,1),32,model_mat)
+	Rendering.queue_line(vec(-0.5233,-0.8224,-1.0465,1),vec(-0.5233,-0.8224,  0.897,1),32,model_mat)
+	Rendering.queue_line(vec( 0.5233,-0.8224,-1.0465,1),vec( 0.5233,-0.8224,  0.897,1),32,model_mat)
+	Rendering.queue_line(vec(-0.5233,-0.8224,-1.0465,1),vec(-0.5233,-0.6728,-1.4203,1),32,model_mat)
+	Rendering.queue_line(vec( 0.5233,-0.8224,-1.0465,1),vec( 0.5233,-0.6728,-1.4203,1),32,model_mat)
 end
 
 local function get_body()

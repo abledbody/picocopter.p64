@@ -37,7 +37,7 @@ local function get_frustum_normals(fov_slope,aspect_ratio)
 	return frust_norm_x,frust_norm_y
 end
 
----@class Camera
+---@class RenderCamera
 ---@field position userdata The XYZ coordinates of the camera position.
 ---@field rotation userdata The quaternion of the camera rotation.
 ---@field near_plane number The depth of the near clipping plane.
@@ -45,7 +45,8 @@ end
 ---@field fov_slope number The slope of the field of view.
 ---@field target userdata The display target to render to.
 ---@field aspect_ratio number The aspect ratio of the display target.
----@field cts_mul userdata A vector used for converting clip space to screen space.
+---@field cts_add userdata The offset used for converting clip space to screen space.
+---@field cts_mul userdata The multiplier used for converting clip space to screen space.
 ---@field view_matrix userdata A cached view matrix.
 ---@field vp_matrix userdata A cached view-projection matrix.
 ---@field frust_norm_x userdata The normal of the left frustum plane.
@@ -115,14 +116,13 @@ local m_camera = {
 }
 m_camera.__index = m_camera
 
----Creates a new camera.
 ---@param near_plane number The depth of the near clipping plane.
 ---@param far_plane number The depth of the far clipping plane.
 ---@param fov_slope number The slope of the field of view. Use `get_fov_slope` if you want to convert from degrees.
 ---@param target userdata The display target to render to. Defaults to the main display.
 ---@param position? userdata The XYZ coordinates of the camera position. Defaults to origin.
 ---@param rotation? userdata The quaternion of the camera rotation. Defaults to identity.
----@return Camera @A new camera object.
+---@return RenderCamera @A new camera object.
 local function new(near_plane,far_plane,fov_slope,target,position,rotation)
 	local width,height = target:width(),target:height()
 	

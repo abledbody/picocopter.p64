@@ -5,7 +5,7 @@
 ---@param p3 userdata The XY coordinates of the third vertex.
 ---@param screen_height number The height of the screen, used for scanline truncation.
 return function(col,p1,p2,p3,uv1,uv2,uv3,screen_height)
-	profile("Triangle setup")
+	profile"Triangle setup"
 	
 	-- To make it so that rasterizing top to bottom is always correct,
 	-- and so that we know at which point to switch the minor side's slope,
@@ -54,9 +54,9 @@ return function(col,p1,p2,p3,uv1,uv2,uv3,screen_height)
 	-- much never lies exactly on a drawable scanline. To compensate,
 	-- we move down the slopes to where there is one.
 	edges:add(slopes*(y-y1),true)
-	profile("Triangle setup")
+	profile"Triangle setup"
 	
-	profile("Triangle iteration")
+	profile"Triangle iteration"
 	-- And now, we iterate over the rows, until reaching y2.
 	while y < y_end do
 		-- We use rectfill because it's cheaper than line.
@@ -64,9 +64,9 @@ return function(col,p1,p2,p3,uv1,uv2,uv3,screen_height)
 		y += 1
 		edges:add(slopes,true)
 	end
-	profile("Triangle iteration")
+	profile"Triangle iteration"
 	
-	profile("Triangle setup")
+	profile"Triangle setup"
 	-- Now we do y2 to y3.
 	dy = y3-y2
 	if dy >= 1 then
@@ -88,13 +88,13 @@ return function(col,p1,p2,p3,uv1,uv2,uv3,screen_height)
 	edges[0] = x3-major_slope*dy
 	edges[1] = x2
 	edges:add(slopes*(y-y2),true)
-	profile("Triangle setup")
+	profile"Triangle setup"
 	
-	profile("Triangle iteration")
+	profile"Triangle iteration"
 	while y < y_end do
 		rectfill(edges[0],y,edges[1],y,col)
 		edges:add(slopes,true)
 		y += 1
 	end
-	profile("Triangle iteration")
+	profile"Triangle iteration"
 end

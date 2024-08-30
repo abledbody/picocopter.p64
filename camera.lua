@@ -60,5 +60,4 @@ return {
 	update = update,
 	set_target = set_target,
 	get_vol = get_vol,
-	set_render_cam = set_render_cam
 }
