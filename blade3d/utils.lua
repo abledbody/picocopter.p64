@@ -27,8 +27,11 @@ function Utils.remap(x,a1,b1,a2,b2) return (b2-a2)*(x-a1)/(b1-a1)+a2 end
 function Utils.asin(x) return atan2(sqrt(1-x*x),x) end
 function Utils.acos(x) return atan2(x,sqrt(1-x*x)) end
 
--- An implementation of QuickSort which does not allocate new tables.
--- Mutates the provided table.
+---An implementation of QuickSort which does not allocate new tables.
+---Mutates the provided table.
+---@param arr table The array to sort.
+---@param key string The key to sort by.
+---@return table @The sorted array.
 function Utils.sort(arr,key)
     local function insertion_sort(min,max)
         for i = min+1,max do

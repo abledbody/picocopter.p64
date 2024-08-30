@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-06-09 04:49:34",modified="2024-08-28 23:16:33",revision=8617]]
+--[[pod_format="raw",created="2024-06-09 04:49:34",modified="2024-08-30 04:00:04",revision=8626]]
 local Rendering = require"blade3d.rendering"
 local Transform = require"blade3d.transform"
 local dtrans,dscale =
