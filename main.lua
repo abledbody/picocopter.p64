@@ -1,19 +1,20 @@
---[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-07-26 02:39:23",revision=18596]]
+--[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-08-30 04:00:22",revision=18614]]
 include"require.lua"
 include"profiler.lua"
 
-profile.enabled(false,true)
+profile.enabled(true,true)
 local show_forces = false
 
-local Rendering = require"rendering"
-local Transform = require"transform"
-local Utils = require"utils"
-local perlin = Utils.perlin
+local Rendering = require"blade3d.rendering"
+local Transform = require"blade3d.transform"
+local quat = require"blade3d.quaternions"
+local B3dUtils = require"blade3d.utils"
+
+local perlin = require"utils".perlin
 local Helicopter = require"helicopter"
 local Camera = require"camera"
-local import_ptm = require"ptm_importer"
+local import_ptm = require"blade3d.ptm_importer"
 local materials = require"materials"
-local quat = require"quaternions"
 local MapGen = require"map_gen"
 
 local building = import_ptm("mdl/Building1.ptm",materials)
@@ -74,9 +75,9 @@ function get_height(x,y)
 		return Utils.lerp(nw,diag,cross_diag_t*2)
 	end]]
 	
-	local n = Utils.lerp(nw,ne,mapx%1)
-	local s = Utils.lerp(sw,se,mapx%1)
-	return Utils.lerp(n,s,mapy%1)
+	local n = B3dUtils.lerp(nw,ne,mapx%1)
+	local s = B3dUtils.lerp(sw,se,mapx%1)
+	return B3dUtils.lerp(n,s,mapy%1)
 end
 
 local chunks = {}
@@ -98,11 +99,11 @@ t_uvs:set(0,0,
 	0,1,
 	1,1
 )
-local t_mats = {"Grass","Grass"}
+local t_mats = {"Grass"}
+local t_mat_indices = vec(1,1)
 
 local test = userdata("u8",mapw,maph)
 
-Rendering.cam{near=0.5,far=196,fov=110}
 local heli_body = Helicopter.get_body()
 heli_body.position = vec(mapw*chunk_size*0.5,0,maph*chunk_size*0.5)
 heli_body.position.y = get_height(heli_body.position.x,heli_body.position.z)
@@ -170,13 +171,13 @@ local function draw_game()
 		end
 	end
 	
-	profile("Z-sorting")
-	Utils.sort(sorted_chunks,"depth")
-	profile("Z-sorting")
+	profile"Z-sorting"
+	B3dUtils.sort(sorted_chunks,"depth")
+	profile"Z-sorting"
 	
 	for i = #sorted_chunks,1,-1 do
 		local chunk = sorted_chunks[i]
-		Rendering.model(unpack(chunk[1]))
+		Rendering.queue_model(unpack(chunk[1]))
 		Rendering.draw_all()
 	end
 	
@@ -189,10 +190,10 @@ local function draw_game()
 		for i = 1,#force_display do
 			local force = force_display[i]
 			local pt = vec(0,0,0,1):add(force[1],true)
-			Rendering.line(
+			Rendering.queue_line(
 				pt,
 				pt+force[2]*0.1,
-				force[3],Utils.ident_4x4())
+				force[3],B3dUtils.ident_4x4())
 		end
 		Rendering.draw_all()
 	end
@@ -226,11 +227,10 @@ local gen_co = cocreate(function()
 					
 				local z = (nw+sw+se+ne)*0.25
 				
-				local mat,imat,model
 				heightmap:set(x,y,z,z)
 				heightmap:set(x,y+1,z,z)
-				local mat,imat = Transform.double_transform(
-					Transform.translate,vec(x*chunk_size+chunk_size/2,z,y*chunk_size+chunk_size/2))
+				local mat,imat = Transform.double_translate(
+					vec(x*chunk_size+chunk_size/2,z,y*chunk_size+chunk_size/2))
 				chunks[y][x] = {building,mat,imat}
 			end
 		end
@@ -258,13 +258,15 @@ local gen_co = cocreate(function()
 						pts=pts,
 						uvs=t_uvs,
 						materials=t_mats,
+						
 						pt_indices=t_pt_indices,
 						uv_indices=t_uv_indices,
+						material_indices=t_mat_indices
 					},
 					materials
 				)
-				local mat,imat = Transform.double_transform(
-					Transform.translate,vec(x*chunk_size,z,y*chunk_size,1)
+				local mat,imat = Transform.double_translate(
+					vec(x*chunk_size,z,y*chunk_size,1)
 				)
 				chunks[y][x] = {model,mat,imat}
 			end

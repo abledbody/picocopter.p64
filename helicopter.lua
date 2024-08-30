@@ -1,11 +1,12 @@
---[[pod_format="raw",created="2024-06-09 04:49:34",modified="2024-07-26 02:39:23",revision=8612]]
-local Rendering = require"rendering"
-local Transform = require"transform"
-local dtf = Transform.double_transform
-local quat = require"quaternions"
+--[[pod_format="raw",created="2024-06-09 04:49:34",modified="2024-08-30 04:00:04",revision=8626]]
+local Rendering = require"blade3d.rendering"
+local Transform = require"blade3d.transform"
+local dtrans,dscale =
+	Transform.double_translate,Transform.double_scale
+local quat = require"blade3d.quaternions"
 local Physics = require"physics"
 local Camera = require"camera"
-local import_ptm = require"ptm_importer"
+local import_ptm = require"blade3d.ptm_importer"
 local materials = require"materials"
 
 local r22 = import_ptm("mdl/r22.ptm",materials)
@@ -19,14 +20,14 @@ local floor_height = 0
 local min_collect,max_collect = 2,14
 
 local rotor_pos = vec(0,1.7016,0.1963)
-local rotor_pos_mat,rotor_pos_imat = dtf(Transform.translate,rotor_pos)
+local rotor_pos_mat,rotor_pos_imat = dtrans(rotor_pos)
 local tail_rotor_pos = vec(-0.1973,0.9405,4.4833)
 local tail_rotor_pos_mat,tail_rotor_pos_imat =
-	dtf(Transform.translate,tail_rotor_pos,quat.dtf(quat(vec(0,0,1),0.25)))
+	dtrans(tail_rotor_pos,quat.dtf(quat(vec(0,0,1),0.25)))
 local rotor_rot = 0
 local tail_rotor_rot = 0
 
-local shadow_scale_mat,shadow_scale_imat = dtf(Transform.scale,vec(1.5,1.5,1.5))
+local shadow_scale_mat,shadow_scale_imat = dscale(vec(1.5,1.5,1.5))
 
 Camera.set_target(body)
 
@@ -106,12 +107,11 @@ local function update()
 end
 
 local function draw_shadow()
-	local mat,imat = dtf(
-		Transform.translate,
+	local mat,imat = dtrans(
 		vec(body.position.x,floor_height,body.position.z)
 	)
 	mat = shadow_scale_mat:matmul(mat)
-	Rendering.model(shadow,mat,imat)
+	Rendering.queue_model(shadow,mat,imat)
 end
 
 local function draw()
@@ -129,20 +129,18 @@ local function draw()
 		tail_rotor_mat:matmul3d(tail_rotor_pos_mat):matmul3d(model_mat),
 		model_imat:matmul3d(tail_rotor_pos_imat):matmul3d(tail_rotor_imat)
 	
-	local cam_pos = Camera.get_pos()
+	Rendering.queue_model(r22,model_mat,model_imat)
+	Rendering.queue_model(r22_rotor,rotor_mat,rotor_imat)
+	Rendering.queue_model(r22_tail_rotor,tail_rotor_mat,tail_rotor_imat)
 	
-	Rendering.model(r22,model_mat,model_imat)
-	Rendering.model(r22_rotor,rotor_mat,rotor_imat)
-	Rendering.model(r22_tail_rotor,tail_rotor_mat,tail_rotor_imat)
-	
-	Rendering.line(vec(-0.3569,-0.3005,-0.6508,1),vec(-0.5233,-0.8224,-0.6508,1),32,model_mat)
-	Rendering.line(vec( 0.3569,-0.3005,-0.6508,1),vec( 0.5233,-0.8224,-0.6508,1),32,model_mat)
-	Rendering.line(vec(-0.299,       0,  0.717,1),vec(-0.5233,-0.8224,  0.717,1),32,model_mat)
-	Rendering.line(vec( 0.299,       0,  0.717,1),vec( 0.5233,-0.8224,  0.717,1),32,model_mat)
-	Rendering.line(vec(-0.5233,-0.8224,-1.0465,1),vec(-0.5233,-0.8224,  0.897,1),32,model_mat)
-	Rendering.line(vec( 0.5233,-0.8224,-1.0465,1),vec( 0.5233,-0.8224,  0.897,1),32,model_mat)
-	Rendering.line(vec(-0.5233,-0.8224,-1.0465,1),vec(-0.5233,-0.6728,-1.4203,1),32,model_mat)
-	Rendering.line(vec( 0.5233,-0.8224,-1.0465,1),vec( 0.5233,-0.6728,-1.4203,1),32,model_mat)
+	Rendering.queue_line(vec(-0.3569,-0.3005,-0.6508,1),vec(-0.5233,-0.8224,-0.6508,1),32,model_mat)
+	Rendering.queue_line(vec( 0.3569,-0.3005,-0.6508,1),vec( 0.5233,-0.8224,-0.6508,1),32,model_mat)
+	Rendering.queue_line(vec(-0.299,       0,  0.717,1),vec(-0.5233,-0.8224,  0.717,1),32,model_mat)
+	Rendering.queue_line(vec( 0.299,       0,  0.717,1),vec( 0.5233,-0.8224,  0.717,1),32,model_mat)
+	Rendering.queue_line(vec(-0.5233,-0.8224,-1.0465,1),vec(-0.5233,-0.8224,  0.897,1),32,model_mat)
+	Rendering.queue_line(vec( 0.5233,-0.8224,-1.0465,1),vec( 0.5233,-0.8224,  0.897,1),32,model_mat)
+	Rendering.queue_line(vec(-0.5233,-0.8224,-1.0465,1),vec(-0.5233,-0.6728,-1.4203,1),32,model_mat)
+	Rendering.queue_line(vec( 0.5233,-0.8224,-1.0465,1),vec( 0.5233,-0.6728,-1.4203,1),32,model_mat)
 end
 
 local function get_body()

@@ -74,7 +74,14 @@
 		"split",
 		"store",
 		"pod",
-		"log"
+		"log",
+		"get_display",
+		"set_draw_target",
+		"yield",
+		"rect",
+		"sspr",
+		"time",
+		"circ"
 	],
 	"Lua.diagnostics.disable": [
 		"trailing-space",
@@ -83,4 +90,5 @@
 		"need-check-nil"
 	],
 	"Lua.runtime.version": "LuaJIT",
+	"editor.rulers": [82],
 }

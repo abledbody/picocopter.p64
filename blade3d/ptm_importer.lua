@@ -1,4 +1,18 @@
---[[pod_format="raw",created="2024-06-04 05:42:45",modified="2024-07-21 00:57:37",revision=9586]]
+--[[pod_format="raw",created="2024-06-04 05:42:45",modified="2024-08-30 04:00:01",revision=9598]]
+
+---Shaders draw triangles to the screen. If properties is a userdata or a table that contains a tex property, the UVs will be transformed to texel coordinates.
+---@alias Shader fun(properties:any,p1:userdata,p2:userdata,p3:userdata,uv1:userdata,uv2:userdata,uv3:userdata,screen_height:number)
+
+---@class Material
+---@field shader Shader The shader to use for rendering.
+---@field properties any The properties passed to the shader.
+
+---@alias MaterialLookup table<string,Material>
+
+---Loads and preprocesses a ptm file for use in Blade3D.
+---@param path string|table The path to the ptm file, or the ptm model itself.
+---@param material_lookup MaterialLookup A table of materials to use for the model. Keys should match the material names in the ptm file.
+---@return PtmModel @The processed model.
 return function(path,material_lookup)
 	local ptm_model
 	if type(path) == "string" then
@@ -9,8 +23,8 @@ return function(path,material_lookup)
 	
 	local ptm_pts,ptm_uvs,ptm_mats =
 		ptm_model.pts,ptm_model.uvs,ptm_model.materials
-	local pt_indices,uv_indices =
-		ptm_model.pt_indices,ptm_model.uv_indices
+	local pt_indices,uv_indices,mat_indices =
+		ptm_model.pt_indices,ptm_model.uv_indices,ptm_model.material_indices
 	
 	-- .pcm file indices refer to matrix rows, but flat indices are faster
 	-- and more convenient for userdata operations.
@@ -58,13 +72,18 @@ return function(path,material_lookup)
 	local sorting_points = userdata("f64",3,tri_count)
 	
 	for i = 0,tri_count-1 do
-		local mat_name = ptm_mats[i+1]
+		local mat_name = ptm_mats[mat_indices[i]]
 		local mtl = material_lookup[mat_name]
 		assert(mtl,"Could not find material "..mat_name)
 		
 		-- Transform uvs if the material uses a texture property,
 		-- because picotron uses texel coordinates, not normalized coordinates.
-		local tex = mtl.properties.tex
+		local tex
+		if type(mtl.properties) == "userdata" then
+			tex = mtl.properties
+		elseif type(mtl.properties) == "table" and mtl.properties.tex then
+			tex = mtl.properties.tex
+		end
 		if tex then
 			uvs:mul(vec(tex:width(),tex:height()),true,0,i*6,2,0,2,3)
 		end
@@ -89,6 +108,15 @@ return function(path,material_lookup)
 		sorting_points:copy((p1+p2+p3)/3,true,0,i*3,3)
 	end
 	
+	---@class PtmModel
+	---@field materials table<number,Material> A table of materials used in the model.
+	---@field pts userdata A 4xN matrix of points.
+	---@field indices userdata A 3x3N matrix of point indices.
+	---@field cull_center userdata The center of the model's bounding sphere.
+	---@field cull_radius number The radius of the model's bounding sphere.
+	---@field uvs userdata A 2x3N matrix of UV coordinates.
+	---@field norms userdata A 3xN matrix of normals.
+	---@field face_dists userdata An N-length array of distances from the origin to the planes of each face.
 	return {
 		materials = materials,
 		pts = ptm_pts,

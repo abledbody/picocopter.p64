@@ -1,6 +1,7 @@
 --[[pod_format="raw",created="2024-07-07 19:33:12",modified="2024-07-19 23:16:27",revision=1172]]
-local Utils = require"utils"
-local perlin,invlerp,lerp = Utils.perlin,Utils.invlerp,Utils.lerp
+local Utils = require"blade3d.utils"
+local invlerp,lerp = Utils.invlerp,Utils.lerp
+local perlin = require"utils".perlin
 
 local heightmap_cols = {
 	[0] = 32,1,19,16,3,17,27,12,11,26,28,7
