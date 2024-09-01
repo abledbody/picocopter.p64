@@ -423,8 +423,13 @@ end
 local function queue_line(p1,p2,col,mat)
 	-- This one was thrown together as a minor feature, so it still needs some
 	-- work.
-	local mvp = mat:matmul(camera:get_vp_matrix())
-	p1,p2 = p1:matmul(mvp),p2:matmul(mvp)
+	p1,p2 = p1:matmul(mat),p2:matmul(mat)
+	
+	local relative_cam_pos = (p1+p2)*0.5-camera.position
+	local depth = relative_cam_pos:dot(relative_cam_pos)
+	
+	local vp = camera:get_vp_matrix()
+	p1,p2 = p1:matmul(vp),p2:matmul(vp)
 	
 	if	   p1.z >  p1[3] or  p2.z >  p2[3]
 		or p1.z < -p1[3] and p2.z < -p2[3]
@@ -442,10 +447,9 @@ local function queue_line(p1,p2,col,mat)
 			:mul(camera.cts_mul,true,0,0,3)
 			:add(camera.cts_add,true,0,0,3)
 	
-	local z = (p1.z+p2.z)*0.5
 	add(draw_queue,{
 		func = function() line(p1.x,p1.y,p2.x,p2.y,col) end,
-		z = z*z -- Squared 'cause every other z is squared.
+		z = depth
 	})
 end
 

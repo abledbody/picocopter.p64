@@ -76,8 +76,8 @@ local m_camera = {
 	refresh_viewport = function(self)
 		local width,height = self.target:width(),self.target:height()
 		self.aspect_ratio = width/height
-		self.cts_add = vec(width,height,width)*0.5
-		self.cts_mul = vec(width,-height,-width)*0.5
+		self.cts_add = vec(width,height,0)*0.5
+		self.cts_mul = vec(width,-height,2)*0.5
 		self.vp_matrix = nil
 	end,
 	
