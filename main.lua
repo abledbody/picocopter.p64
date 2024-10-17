@@ -2,7 +2,7 @@
 include"require.lua"
 include"profiler.lua"
 
-profile.enabled(true,true)
+profile.enabled(false,true)
 local show_forces = false
 
 local Rendering = require"blade3d.rendering"
@@ -82,27 +82,7 @@ end
 
 local chunks = {}
 
-local t_pt_indices = userdata("f64",3,2)
-t_pt_indices:set(0,0,
-	0,1,2,
-	1,3,2
-)
-local t_uv_indices = userdata("f64",3,2)
-t_uv_indices:set(0,0,
-	0,1,2,
-	1,3,2
-)
-local t_uvs = userdata("f64",2,4)
-t_uvs:set(0,0,
-	0,0,
-	1,0,
-	0,1,
-	1,1
-)
-local t_mats = {"Grass"}
-local t_mat_indices = vec(1,1)
-
-local test = userdata("u8",mapw,maph)
+local graphical_map = userdata("u8",mapw,maph)
 
 local heli_body = Helicopter.get_body()
 heli_body.position = vec(mapw*chunk_size*0.5,0,maph*chunk_size*0.5)
@@ -125,7 +105,7 @@ end
 
 local function draw_map(x,y)
 	rect(x,y,x+mapw+1,y+maph+1,16)
-	sspr(test,0,0,mapw,maph,x+1,y+1)
+	sspr(graphical_map,0,0,mapw,maph,x+1,y+1)
 	
 	if time()%0.8 > 0.2 then
 		local hx,hy =
@@ -220,7 +200,7 @@ local gen_co = cocreate(function()
 		for x = 0,mapw-1 do
 			local building_prob = perlin(x,y,7,85)+0.5
 			if building_prob > 0.5 and building_prob < 0.6 then
-				test[x+y*mapw] = 24
+				graphical_map[x+y*mapw] = 22
 	
 				local nw,ne = heightmap:get(x,y,2)
 				local sw,se = heightmap:get(x,y+1,2)
@@ -236,42 +216,8 @@ local gen_co = cocreate(function()
 		end
 	end
 	
-	for y = 0,maph-1 do
-		for x = 0,mapw-1 do
-			if not chunks[y][x] then
-				local nw,ne = heightmap:get(x,y,2)
-				local sw,se = heightmap:get(x,y+1,2)
-				
-				local z = min(nw,min(sw,min(se,ne)))
-				test[x+y*mapw] = heatmap[mid(flr((nw+sw+se+ne)*0.25/50*#heatmap),0,#heatmap)]
-				
-				local mat,imat,model
-				local pts = userdata("f64",4,4)
-				pts:set(0,0,
-					         0,nw-z,         0,1,
-					chunk_size,ne-z,         0,1,
-					         0,sw-z,chunk_size,1,
-					chunk_size,se-z,chunk_size,1
-				)
-				model = import_ptm(
-					{
-						pts=pts,
-						uvs=t_uvs,
-						materials=t_mats,
-						
-						pt_indices=t_pt_indices,
-						uv_indices=t_uv_indices,
-						material_indices=t_mat_indices
-					},
-					materials
-				)
-				local mat,imat = Transform.double_translate(
-					vec(x*chunk_size,z,y*chunk_size,1)
-				)
-				chunks[y][x] = {model,mat,imat}
-			end
-		end
-	end
+	chunks,graphical_map =
+		MapGen.to_chunks(chunks,graphical_map,heightmap,materials,vec(mapw,maph),chunk_size)
 end)
 
 local function update_generation()

@@ -1,11 +1,33 @@
 --[[pod_format="raw",created="2024-07-07 19:33:12",modified="2024-07-19 23:16:27",revision=1172]]
 local Utils = require"blade3d.utils"
+local import_ptm = require"blade3d.ptm_importer"
+local Transform = require"blade3d.transform"
 local invlerp,lerp = Utils.invlerp,Utils.lerp
 local perlin = require"utils".perlin
 
 local heightmap_cols = {
 	[0] = 32,1,19,16,3,17,27,12,11,26,28,7
 }
+
+local t_pt_indices = userdata("f64",3,2)
+t_pt_indices:set(0,0,
+	0,1,2,
+	1,3,2
+)
+local t_uv_indices = userdata("f64",3,2)
+t_uv_indices:set(0,0,
+	0,1,2,
+	1,3,2
+)
+local t_uvs = userdata("f64",2,4)
+t_uvs:set(0,0,
+	0,0,
+	1,0,
+	0,1,
+	1,1
+)
+local t_mats = {"Grass"}
+local t_mat_indices = vec(1,1)
 
 local function make_heightmap(seed,size,scale,octaves)
 	local w,h = size.x,size.y
@@ -23,7 +45,9 @@ local function make_heightmap(seed,size,scale,octaves)
 				extents.min = min(extents.min,value)
 				extents.max = max(extents.max,value)
 				flat += 1
-				--yield()
+				if stat(1) > 0.8 then
+					yield()
+				end
 			end
 		end
 	end
@@ -47,24 +71,26 @@ local function make_roads(seed,size,create_chance,min_len,max_len)
 			if x < 0 or x > w or y < 0 or y > h then
 				break
 			end
-			--yield()
+			if stat(1) > 0.8 then
+				yield()
+			end
 		end
 	end
 end
 
-local function to_chunks(heightmap)
-	local chunks = {}
-	
-	for y = 0,maph-1 do
-		for x = 0,mapw-1 do
-			local nw = heightmap[y  ][x  ]
-			local sw = heightmap[y+1][x  ]
-			local se = heightmap[y+1][x+1]
-			local ne = heightmap[y  ][x+1]
+local function to_chunks(chunks,graphical_map,heightmap,materials,map_size,chunk_size)
+	for y = 0,map_size.y-1 do
+		for x = 0,map_size.x-1 do
+			if not chunks[y][x] then
+				local nw,ne = heightmap:get(x,y,2)
+				local sw,se = heightmap:get(x,y+1,2)
 			
 			local z = min(nw,min(sw,min(se,ne)))
+				local avg_height = flr((nw+sw+se+ne)*0.25/50*#heightmap_cols)
+				graphical_map[x+y*map_size.x] =
+					heightmap_cols[mid(avg_height,0,#heightmap_cols)]
 			
-			local mat,imat,model
+				local model
 			local pts = userdata("f64",4,4)
 			pts:set(0,0,
 				         0,nw-z,         0,1,
@@ -77,19 +103,22 @@ local function to_chunks(heightmap)
 					pts=pts,
 					uvs=t_uvs,
 					materials=t_mats,
+						
 					pt_indices=t_pt_indices,
 					uv_indices=t_uv_indices,
+						material_indices=t_mat_indices
 				},
 				materials
 			)
-			local mat,imat = Transform.double_transform(
-				Transform.translate,vec(x*chunk_size,z,y*chunk_size,1)
+				local mat,imat = Transform.double_translate(
+					vec(x*chunk_size,z,y*chunk_size,1)
 			)
 			chunks[y][x] = {model,mat,imat}
+			end
 		end
 	end
 	
-	return chunks
+	return chunks,graphical_map
 end
 
 local function render(heightmap,extents,roads)
