@@ -24,10 +24,6 @@ local maph = 48
 local chunk_size = 32
 local draw_dist = 4
 
-local heatmap = {
-	[0] = 32,1,19,16,3,17,27,12,11,26,28,7
-}
-
 local loops
 force_display = {}
 

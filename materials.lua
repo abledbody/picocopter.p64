@@ -2,31 +2,31 @@
 return {
 	RobinsonR22Chassis = {
 		shader = require"blade3d.shaders.textri",
-		properties = get_spr(3)
+		properties = {tex = 3}
 	},
 	A109Chassis = {
 		shader = require"blade3d.shaders.textri",
-		properties = get_spr(1)
+		properties = {tex = 1}
 	},
 	Rotor = {
 		shader = require"blade3d.shaders.textri",
-		properties = get_spr(5)
+		properties = {tex = 5}
 	},
 	Tailrotor = {
 		shader = require"blade3d.shaders.textri",
-		properties = get_spr(9)
+		properties = {tex = 9}
 	},
 	Grass = {
 		shader = require"blade3d.shaders.textri",
-		properties = get_spr(4)
+		properties = {tex = 4}
 	},
 	Windows1 = {
 		shader = require"blade3d.shaders.textri",
-		properties = get_spr(6)
+		properties = {tex = 6}
 	},
 	Shadow = {
 		shader = require"blade3d.shaders.textri",
-		properties = get_spr(8)
+		properties = {tex = 8}
 	},
 	Color5 = {
 		shader = require"blade3d.shaders.trifill",

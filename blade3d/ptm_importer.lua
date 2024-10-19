@@ -82,7 +82,7 @@ return function(path,material_lookup)
 		if type(mtl.properties) == "userdata" then
 			tex = mtl.properties
 		elseif type(mtl.properties) == "table" and mtl.properties.tex then
-			tex = mtl.properties.tex
+			tex = get_spr(mtl.properties.tex)
 		end
 		if tex then
 			uvs:mul(vec(tex:width(),tex:height()),true,0,i*6,2,0,2,3)
