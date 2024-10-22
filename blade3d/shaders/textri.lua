@@ -49,9 +49,9 @@ return function(props,p1,p2,p3,uv1,uv2,uv3,screen_height)
 			w2, (w3-w1)*t+w1
 		)
 	
-	local start_y = y1 > 0 and y1\1 or 0
-	local mid_y = y2 < 0 and 0 or y2 > screen_height and screen_height or y2\1
-	local stop_y = (y3 <= screen_height and y3\1 or screen_height)
+	local start_y = y1 < -1 and -1 or y1\1
+	local mid_y = y2 < -1 and -1 or y2 > screen_height-1 and screen_height-1 or y2\1
+	local stop_y = (y3 <= screen_height-1 and y3\1 or screen_height-1)
 	
 	-- Top half
 	local dy = mid_y-start_y
@@ -71,6 +71,7 @@ return function(props,p1,p2,p3,uv1,uv2,uv3,screen_height)
 		-- This is, otherwise, the only place where v3 would be used,
 		-- so we just inline it.
 		local slope = (vec(spr,p3.x,y3,p3.x,y3,uv3.x,uv3.y,uv3.x,uv3.y,w3,w3)-v2)/(y3-y2)
+		
 		local scanlines = userdata("f64",11,dy)
 			:copy(slope*(mid_y+1-y2)+v2,true,0,0,11)
 			:copy(slope,true,0,11,11,0,11,dy-1)
