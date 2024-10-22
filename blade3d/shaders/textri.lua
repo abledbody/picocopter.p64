@@ -10,7 +10,7 @@
 ---@param uv3 userdata The UV texture coordinates of the third vertex.
 ---@param screen_height number The height of the screen, used for scanline truncation.
 return function(props,p1,p2,p3,uv1,uv2,uv3,screen_height)
-	profile"Triangle setup"
+	profile"Triangle drawing"
 	local spr = props.tex
 	
 	-- To make it so that rasterizing top to bottom is always correct,
@@ -48,37 +48,34 @@ return function(props,p1,p2,p3,uv1,uv2,uv3,screen_height)
 			uvd.x,uvd.y,
 			w2, (w3-w1)*t+w1
 		)
-	profile"Triangle setup"
 	
-	profile"Triangle drawing"
+	local start_y = y1 > 0 and y1\1 or 0
+	local mid_y = y2 < 0 and 0 or y2 > screen_height and screen_height or y2\1
+	local stop_y = (y3 <= screen_height and y3\1 or screen_height)
+	
 	-- Top half
-	local start_y = y1 > 0 and y1 or 0
-	local stop_y = (y2 <= screen_height and y2 or screen_height)
-	local dy = (stop_y\1)-(start_y\1)
+	local dy = mid_y-start_y
 	if dy > 0 then
 		local slope = (v2-v1)/(y2-y1)
 		
-		tline3d(userdata("f64",11,dy+1)
-			:copy(slope*(start_y-y1)+v1,true)
-			:copy(slope*(stop_y-y1)+v1,true,0,dy*11)
-			:lerp(0,dy,11,11,1)
-		)
+		local scanlines = userdata("f64",11,dy)
+			:copy(slope*(start_y+1-y1)+v1,true,0,0,11)
+			:copy(slope,true,0,11,11,0,11,dy-1)
+		
+		tline3d(scanlines:add(scanlines,true,0,11,11,11,11,dy-1))
 	end
 	
 	-- Bottom half
-	start_y = y2 > 0 and y2 or 0
-	stop_y = (y3 <= screen_height and y3 or screen_height)
-	dy = (stop_y\1)-(start_y\1)
+	dy = stop_y-mid_y
 	if dy > 0 then
 		-- This is, otherwise, the only place where v3 would be used,
 		-- so we just inline it.
 		local slope = (vec(spr,p3.x,y3,p3.x,y3,uv3.x,uv3.y,uv3.x,uv3.y,w3,w3)-v2)/(y3-y2)
-		
-		tline3d(userdata("f64",11,dy+1)
-			:copy(slope*(start_y-y2)+v2,true)
-			:copy(slope*(stop_y-y2)+v2,true,0,dy*11)
-			:lerp(0,dy,11,11,1)
-		)
+		local scanlines = userdata("f64",11,dy)
+			:copy(slope*(mid_y+1-y2)+v2,true,0,0,11)
+			:copy(slope,true,0,11,11,0,11,dy-1)
+			
+		tline3d(scanlines:add(scanlines,true,0,11,11,11,11,dy-1))
 	end
 	profile"Triangle drawing"
 end

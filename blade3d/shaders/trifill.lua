@@ -5,7 +5,7 @@
 ---@param p3 userdata The XY coordinates of the third vertex.
 ---@param screen_height number The height of the screen, used for scanline truncation.
 return function(col,p1,p2,p3,_,_,_,screen_height)
-	profile"Triangle setup"
+	profile"Triangle drawing"
 	-- To make it so that rasterizing top to bottom is always correct,
 	-- and so that we know at which point to switch the minor side's slope,
 	-- we need the vertices to be sorted by y.
@@ -30,9 +30,7 @@ return function(col,p1,p2,p3,_,_,_,screen_height)
 			(p3.x-p1.x)*(p2.y-p1.y)/(p3.y-p1.y)+p1.x, p2.y,
 			col
 		)
-	profile"Triangle setup"
 	
-	profile"Triangle drawing"
 	-- Top half
 	local start_y = y1 > 0 and y1 or 0
 	local stop_y = (y2 <= screen_height and y2 or screen_height)
@@ -52,6 +50,8 @@ return function(col,p1,p2,p3,_,_,_,screen_height)
 	stop_y = (y3 <= screen_height and y3 or screen_height)
 	dy = (stop_y\1)-(start_y\1)
 	if dy > 0 then
+		-- This is, otherwise, the only place where v3 would be used,
+		-- so we just inline it.
 		local slope = (vec(p3.x,p3.y,p3.x,p3.y,col)-v2)/(y3-y2)
 		
 		rectfill(userdata("f64",5,dy+1)

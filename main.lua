@@ -148,11 +148,10 @@ local function draw_game()
 	end
 	
 	profile"Z-sorting"
-	B3dUtils.sort(sorted_chunks,"depth")
+	local sorted = B3dUtils.tab_sort(sorted_chunks,"depth",true)
 	profile"Z-sorting"
 	
-	for i = #sorted_chunks,1,-1 do
-		local chunk = sorted_chunks[i]
+	for chunk in sorted do
 		Rendering.queue_model(unpack(chunk[1]))
 		Rendering.draw_all()
 	end

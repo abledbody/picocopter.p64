@@ -1,6 +1,6 @@
 --[[pod_format="raw",created="2024-05-22 18:18:28",modified="2024-08-28 23:16:33",revision=18317]]
 local Utils = require"blade3d.utils"
-local sort = Utils.sort
+local sort = Utils.tab_sort
 
 ---@class RenderCamera
 local camera
@@ -315,14 +315,11 @@ local function draw_all()
 	end
     
 	profile"Z-sorting"
-	sort(draw_queue,"z")
+	local sorted = sort(draw_queue,"z",true)
 	profile"Z-sorting"
-	
-	profile"Draw queue execution"
-	for i = #draw_queue,1,-1 do
-		draw_queue[i].func()
+	for draw_command in sorted do
+		draw_command.func()
 	end
-	profile"Draw queue execution"
 	
 	model_queue = {}
 	draw_queue = {}
