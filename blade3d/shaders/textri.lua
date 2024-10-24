@@ -1,3 +1,5 @@
+local scanlines = userdata("f64",11,270)
+
 ---Draws a 3D textured triangle to the screen. Note that the vertices need W components,
 ---and that they need to be the reciprocal of the W which is produced by the projection matrix.
 ---This step is typically done in the perspective division step.
@@ -56,13 +58,12 @@ return function(props,p1,p2,p3,uv1,uv2,uv3,screen_height)
 	-- Top half
 	local dy = mid_y-start_y
 	if dy > 0 then
-		local slope = (v2-v1)/(y2-y1)
+		local slope = (v2-v1):div((y2-y1))
 		
-		local scanlines = userdata("f64",11,dy)
-			:copy(slope*(start_y+1-y1)+v1,true,0,0,11)
+		scanlines:copy(slope*(start_y+1-y1)+v1,true,0,0,11)
 			:copy(slope,true,0,11,11,0,11,dy-1)
 		
-		tline3d(scanlines:add(scanlines,true,0,11,11,11,11,dy-1))
+		tline3d(scanlines:add(scanlines,true,0,11,11,11,11,dy-1),0,dy)
 	end
 	
 	-- Bottom half
@@ -72,11 +73,10 @@ return function(props,p1,p2,p3,uv1,uv2,uv3,screen_height)
 		-- so we just inline it.
 		local slope = (vec(spr,p3.x,y3,p3.x,y3,uv3.x,uv3.y,uv3.x,uv3.y,w3,w3)-v2)/(y3-y2)
 		
-		local scanlines = userdata("f64",11,dy)
-			:copy(slope*(mid_y+1-y2)+v2,true,0,0,11)
+		scanlines:copy(slope*(mid_y+1-y2)+v2,true,0,0,11)
 			:copy(slope,true,0,11,11,0,11,dy-1)
 			
-		tline3d(scanlines:add(scanlines,true,0,11,11,11,11,dy-1))
+		tline3d(scanlines:add(scanlines,true,0,11,11,11,11,dy-1),0,dy)
 	end
 	profile"Triangle drawing"
 end

@@ -1,3 +1,5 @@
+local scanlines = userdata("f64",5,270)
+
 ---Draws a solid color triangle to the screen.
 ---@param col number The color index to draw with.
 ---@param p1 userdata The XY coordinates of the first vertex.
@@ -42,11 +44,10 @@ return function(col,p1,p2,p3,_,_,_,screen_height)
 	if dy > 0 then
 		local slope = (v2-v1)/(y2-y1)
 		
-		local scanlines = userdata("f64",5,dy)
-			:copy(slope*(start_y+1-y1)+v1,true,0,0,5)
+		scanlines:copy(slope*(start_y+1-y1)+v1,true,0,0,5)
 			:copy(slope,true,0,5,5,0,5,dy-1)
 		
-		rectfill(scanlines:add(scanlines,true,0,5,5,5,5,dy-1))
+		rectfill(scanlines:add(scanlines,true,0,5,5,5,5,dy-1),0,dy)
 	end
 	
 	-- Bottom half
@@ -56,11 +57,10 @@ return function(col,p1,p2,p3,_,_,_,screen_height)
 		-- so we just inline it.
 		local slope = (vec(p3.x,p3.y,p3.x,p3.y,col)-v2)/(y3-y2)
 		
-		local scanlines = userdata("f64",5,dy)
-			:copy(slope*(mid_y+1-y2)+v2,true,0,0,5)
+		scanlines:copy(slope*(mid_y+1-y2)+v2,true,0,0,5)
 			:copy(slope,true,0,5,5,0,5,dy-1)
 		
-		rectfill(scanlines:add(scanlines,true,0,5,5,5,5,dy-1))
+		rectfill(scanlines:add(scanlines,true,0,5,5,5,5,dy-1),0,dy)
 	end
 	profile"Triangle drawing"
 end
