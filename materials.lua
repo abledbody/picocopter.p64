@@ -17,8 +17,8 @@ return {
 		properties = {tex = 9}
 	},
 	Grass = {
-		shader = require"blade3d.shaders.textri",
-		properties = {tex = 4}
+		shader = require"blade3d.shaders.lambtri",
+		properties = {color_ramp = {32,1,19,3,27,11,26}}
 	},
 	Windows1 = {
 		shader = require"blade3d.shaders.textri",
@@ -29,11 +29,11 @@ return {
 		properties = {tex = 8}
 	},
 	Color5 = {
-		shader = require"blade3d.shaders.trifill",
-		properties = 5
+		shader = require"blade3d.shaders.lambtri",
+		properties = {color_ramp = {32,21,5,22,6,7}}
 	},
 	Color22 = {
 		shader = require"blade3d.shaders.trifill",
-		properties = 22
+		properties = {col = 22}
 	}
 }

@@ -125,7 +125,7 @@ local function draw_game()
 	draw_sky(cam_pitch,cam_yaw)
 	
 	-- Chunks
-	local sorted_chunks = {}
+	local sortable_chunks = {}
 	local min_y = flr(cam_pos.z/chunk_size-draw_dist)
 	local max_y = flr(cam_pos.z/chunk_size+draw_dist)
 	local min_x = flr(cam_pos.x/chunk_size-draw_dist)
@@ -140,7 +140,7 @@ local function draw_game()
 					if Rendering.in_frustum(model,mat) then
 						local depth = (vec(x,y)+0.5)*chunk_size-vec(cam_pos.x,cam_pos.z)
 						depth *= depth
-						add(sorted_chunks,{chunk,depth = depth.x+depth.y})
+						add(sortable_chunks,{chunk,depth = depth.x+depth.y})
 					end
 				end
 			end
@@ -148,11 +148,12 @@ local function draw_game()
 	end
 	
 	profile"Z-sorting"
-	local sorted = B3dUtils.tab_sort(sorted_chunks,"depth",true)
+	local sorted = B3dUtils.tab_sort(sortable_chunks,"depth",true)
 	profile"Z-sorting"
 	
 	for chunk in sorted do
-		Rendering.queue_model(unpack(chunk[1]))
+		local model,mat,imat = unpack(chunk[1])
+		Rendering.queue_model(model,mat,imat,0.05,vec(0.1,0.4,0.3))
 		Rendering.draw_all()
 	end
 	

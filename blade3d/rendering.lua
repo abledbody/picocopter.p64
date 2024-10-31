@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-05-22 18:18:28",modified="2024-08-28 23:16:33",revision=18317]]
+--[[pod_format="raw",created="2024-05-22 18:18:28",modified="2024-10-30 01:19:02",revision=18436]]
 local Utils = require"blade3d.utils"
 local sort = Utils.tab_sort
 
@@ -49,9 +49,9 @@ end
 ---@return table? @A new model containing every clipped triangle.
 local function clip_tris(model)
 	local pts,uvs,indices,
-		skip_tris,materials,depths =
+		skip_tris,materials,depths,lums =
 			model.pts,model.uvs,model.indices,
-			model.skip_tris,model.materials,model.depths
+			model.skip_tris,model.materials,model.depths,model.lums
 	
 	local tri_clips = {}
 	local quad_clips = {}
@@ -111,12 +111,18 @@ local function clip_tris(model)
 				if #outside == 1 then
 					add(
 						quad_clips,
-						{inside[1],inside[2],outside[1],materials[i],depths[i]}
+						{
+							inside[1],inside[2],outside[1],
+							materials[i],depths[i],lums and lums[i]
+						}
 					)
 				else
 					add(
 						tri_clips,
-						{inside[1],outside[1],outside[2],materials[i],depths[i]}
+						{
+							inside[1],outside[1],outside[2],
+							materials[i],depths[i],lums and lums[i]
+						}
 					)
 				end
 			end
@@ -135,6 +141,7 @@ local function clip_tris(model)
 	local gen_indices = userdata("i64",3,gen_tri_count)
 	local gen_materials = {}
 	local gen_depths = userdata("f64",gen_tri_count)
+	local gen_lums = lums and userdata("f64",gen_tri_count)
 	
 	-- vert_i and tri_i mutate differently for triangles and quads.
 	local vert_i = 0
@@ -180,6 +187,9 @@ local function clip_tris(model)
 		-- Copy over the extra data from the original triangle.
 		gen_materials[tri_i] = verts[4]
 		gen_depths[tri_i] = verts[5]
+		if lums then
+			gen_lums[tri_i] = verts[6]
+		end
 		
 		vert_i += 3
 		tri_i += 1
@@ -234,6 +244,10 @@ local function clip_tris(model)
 		gen_materials[tri_i+1] = verts[4]
 		gen_depths[tri_i] = verts[5]
 		gen_depths[tri_i+1] = verts[5]
+		if lums then
+			gen_lums[tri_i] = verts[6]
+			gen_lums[tri_i+1] = verts[6]
+		end
 		
 		vert_i += 4
 		tri_i += 2
@@ -245,15 +259,16 @@ local function clip_tris(model)
 		indices = gen_indices,
 		skip_tris = {},
 		materials = gen_materials,
-		depths = gen_depths
+		depths = gen_depths,
+		lums = gen_lums
 	}
 end
 
 local function draw_model(model,cts_mul,cts_add,screen_height)
-	local pts,uvs,indices,
-		skip_tris,materials,depths =
+	local pts,uvs,indices,skip_tris,materials,depths,lums =
 			model.pts,model.uvs,model.indices,
-			model.skip_tris,model.materials,model.depths
+			model.skip_tris,model.materials,model.depths,
+			model.lums
 	
 	profile"Perspective"
 	pts = perspective_points(pts:copy(pts))
@@ -276,11 +291,15 @@ local function draw_model(model,cts_mul,cts_add,screen_height)
 				uvs:row(tri_i+2)
 			
 			local material = materials[j]
-			local shader,properties = material.shader,material.properties
+			local shader,properties = material.shader, material.properties
+			local props_in = {
+				light = lums and lums[j]
+			}
+			setmetatable(props_in,{__index = properties})
 			
 			add(draw_queue,{
 				func = function()
-					shader(properties,p1,p2,p3,uv1,uv2,uv3,screen_height)
+					shader(props_in,p1,p2,p3,uv1,uv2,uv3,screen_height)
 				end,
 				z = depths[j]
 			})
@@ -353,10 +372,13 @@ end
 ---@param model table @The model to queue.
 ---@param mat userdata @The model's transformation matrix.
 ---@param imat userdata @The inverse of the model's transformation matrix.
-local function queue_model(model,mat,imat)
+---@param ambience? number @The ambient light intensity.
+---@param light? userdata @The position of the light source.
+---@param light_intensity? number @The intensity of the light source. If not provided, the light is assumed to be directional, and the intensity is the magnitude of the light vector.
+local function queue_model(model,mat,imat,ambience,light,light_intensity)
 	profile"Backface culling"
 	local skip_tris = {}
-	local face_dists = model.face_dists
+	local face_dists,norms = model.face_dists,model.norms
 	local relative_cam_pos = camera.position:matmul3d(imat)
 	
 	-- Each face, in addition to a normal, has a length. This length is the
@@ -367,7 +389,7 @@ local function queue_model(model,mat,imat)
 	
 	-- Did you know that multiplying a matrix by a transposed vector is the same
 	-- as performing a dot product between the matrix's rows and the vector?
-	local dots = model.norms:matmul(relative_cam_pos:transpose())
+	local dots = norms:matmul(relative_cam_pos:transpose())
 	for i = 0,#face_dists-1 do
 		skip_tris[i] = dots[i] < face_dists[i]
 	end
@@ -396,6 +418,29 @@ local function queue_model(model,mat,imat)
 	depths:add(cam_sort_points,true,2,0,1,3,1,cam_sort_points:height()) -- Z
 	profile"Depth determination"
 	
+	profile"Lighting"
+	local lums
+	if light then
+		light = light or vec(0,0,0)
+		-- For directional lights, the position needs to be stripped from the
+		-- inverse matrix.
+		local light_pos = light:matmul3d(
+			light_intensity and imat or imat:copy(0,false,0,12,3)
+		)
+		local light_mag = light_pos:magnitude()+0.00001
+		local illumination = light_intensity
+			and light_intensity/(light_mag*light_mag) -- Inverse square falloff
+			or light_mag
+		
+		lums = (norms:matmul((light_pos/light_mag):transpose())+1) -- Dot product
+			*(illumination*0.5) -- illumination
+			+(ambience or 0) -- Ambient light
+	elseif ambience then
+		lums = userdata("f64",norms:height())
+		lums:copy(ambience,true,0,0,1,0,1,norms:height())
+	end
+	profile"Lighting"
+	
 	-- The model's data has been, and will be, aggressively mutated, so a new one
 	-- gets created to isolate side effects.
 	add(model_queue,{
@@ -405,7 +450,8 @@ local function queue_model(model,mat,imat)
 		tex = model.tex,
 		skip_tris = skip_tris,
 		materials = model.materials,
-		depths = depths
+		depths = depths,
+		lums = lums,
 	})
 	
 	return true
@@ -418,8 +464,6 @@ end
 ---@param col integer @The color of the line.
 ---@param mat userdata @The line's transformation matrix.
 local function queue_line(p1,p2,col,mat)
-	-- This one was thrown together as a minor feature, so it still needs some
-	-- work.
 	p1,p2 = p1:matmul(mat),p2:matmul(mat)
 	
 	local relative_cam_pos = (p1+p2)*0.5-camera.position
@@ -428,7 +472,7 @@ local function queue_line(p1,p2,col,mat)
 	local vp = camera:get_vp_matrix()
 	p1,p2 = p1:matmul(vp),p2:matmul(vp)
 	
-	if	   p1.z >  p1[3] or  p2.z >  p2[3]
+	if	   p1.z >  p1[3] and p2.z >  p2[3]
 		or p1.z < -p1[3] and p2.z < -p2[3]
 		or p1.x >  p1[3] and p2.x >  p2[3]
 		or p1.x < -p1[3] and p2.x < -p2[3]
@@ -436,6 +480,16 @@ local function queue_line(p1,p2,col,mat)
 		or p1.y < -p1[3] and p2.y < -p2[3]
 	then return end
 	
+	if p1.z >  p1[3] or  p2.z > p2[3] then
+		-- We'll call the point behind the camera p2.
+		if p1.z < p2.z then
+			p1, p2 = p2, p1
+		end
+		
+		local diff2 = p2-p1
+		p2 = diff2*(p1.z-p1[3])/(diff2.z+diff2[3])+p1
+	end
+
 	p1,p2 =
 		perspective_point(p1)
 			:mul(camera.cts_mul,true,0,0,3)

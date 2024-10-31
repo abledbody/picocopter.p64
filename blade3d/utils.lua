@@ -57,4 +57,31 @@ function Utils.tab_sort(tab,key,descending)
 	end
 end
 
+---A set of 64 precalculated ordered dither patterns.
+local dithers = userdata("u8",8,64)
+do
+	local bayer = userdata("u8",8,8)
+	bayer:set(0,0,
+		0,32, 8,40, 2,34,10,42,
+		48,16,56,24,50,18,58,26,
+		12,44, 4,36,14,46, 6,38,
+		60,28,52,20,62,30,54,22,
+		3,35,11,43, 1,33, 9,41,
+		51,19,59,27,49,17,57,25,
+		15,47, 7,39,13,45, 5,37,
+		63,31,55,23,61,29,53,21
+	)
+	
+	for i = 0,63 do
+		for y = 0,7 do
+			local row = 0
+			for x = 0,7 do
+				row |= (i > bayer[x+y*8] and 1 or 0)<<x
+			end
+			dithers[y+i*8] = row
+		end
+	end
+end
+memmap(0x80000,dithers)
+
 return Utils

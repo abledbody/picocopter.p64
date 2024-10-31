@@ -1,13 +1,15 @@
 local scanlines = userdata("f64",5,270)
 
 ---Draws a solid color triangle to the screen.
----@param col number The color index to draw with.
+---@param props table The properties passed to the shader. Expects a `col` field with a color index.
 ---@param p1 userdata The XY coordinates of the first vertex.
 ---@param p2 userdata The XY coordinates of the second vertex.
 ---@param p3 userdata The XY coordinates of the third vertex.
 ---@param screen_height number The height of the screen, used for scanline truncation.
-return function(col,p1,p2,p3,_,_,_,screen_height)
+return function(props,p1,p2,p3,_,_,_,screen_height)
 	profile"Triangle setup"
+	local col = props.col
+	
 	-- To make it so that rasterizing top to bottom is always correct,
 	-- and so that we know at which point to switch the minor side's slope,
 	-- we need the vertices to be sorted by y.
