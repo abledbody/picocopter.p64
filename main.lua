@@ -153,7 +153,7 @@ local function draw_game()
 	
 	for chunk in sorted do
 		local model,mat,imat = unpack(chunk[1])
-		Rendering.queue_model(model,mat,imat,0.3,vec(0.2,0.7,0.5))
+		Rendering.queue_model(model,mat,imat,0.1,vec(0.2,0.7,0.5))
 		Rendering.draw_all()
 	end
 	

@@ -96,8 +96,9 @@ local orig_colormap = col_table:copy(col_table)
 local color_transitions = lookups:height()-1
 local log2 = 1/log(2)
 local function get_lookup_index(luminance)
+	if luminance <= 0 then return 0 end
 	local i = log(luminance)*log2+lightness_range
-	i = i < 0 and 0 or i > color_transitions and color_transitions or i
+	i = i > color_transitions and color_transitions or i
 	return i
 end
 

@@ -428,12 +428,12 @@ local function queue_model(model,mat,imat,ambience,light,light_intensity)
 			light_intensity and imat or imat:copy(0,false,0,12,3)
 		)
 		local light_mag = light_pos:magnitude()+0.00001
-		local illumination = light_intensity
+		local illuminance = light_intensity
 			and light_intensity/(light_mag*light_mag) -- Inverse square falloff
 			or light_mag
 		
-		lums = norms:matmul((light_pos/light_mag):transpose()) -- Dot product
-			*illumination -- illumination
+		lums = ((norms:matmul((light_pos/light_mag):transpose())*0.5)+0.5) -- Normal contribution
+			*illuminance -- Intensity
 			+(ambience or 0) -- Ambient light
 	elseif ambience then
 		lums = userdata("f64",norms:height())
