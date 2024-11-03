@@ -6,7 +6,7 @@ local lambtextri = require"blade3d.shaders.lambtextri"
 
 return {
 	RobinsonR22Chassis = {
-		shader = textri,
+		shader = lambtextri,
 		properties = {tex = 3}
 	},
 	A109Chassis = {

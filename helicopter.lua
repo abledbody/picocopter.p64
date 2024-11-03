@@ -129,7 +129,7 @@ local function draw()
 		tail_rotor_mat:matmul3d(tail_rotor_pos_mat):matmul3d(model_mat),
 		model_imat:matmul3d(tail_rotor_pos_imat):matmul3d(tail_rotor_imat)
 	
-	Rendering.queue_model(r22,model_mat,model_imat)
+	Rendering.queue_model(r22,model_mat,model_imat,0.1,vec(0.2,0.7,0.5))
 	Rendering.queue_model(r22_rotor,rotor_mat,rotor_imat)
 	Rendering.queue_model(r22_tail_rotor,tail_rotor_mat,tail_rotor_imat)
 	

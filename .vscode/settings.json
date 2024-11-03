@@ -81,7 +81,10 @@
 		"rect",
 		"sspr",
 		"time",
-		"circ"
+		"circ",
+		"memcpy",
+		"memmap",
+		"unmap"
 	],
 	"Lua.diagnostics.disable": [
 		"trailing-space",

@@ -1,7 +1,13 @@
 local color = require"blade3d.color"
 local log = math.log
 
+local lightness_range = 8
+local dithers_address = 0x80000
+local lookup_address = 0x81000
+local orig_colormap_address = lookup_address+0x1000*(lightness_range*2+1)
+
 local dithers = userdata("u8",8,64)
+memmap(dithers_address,dithers)
 do
 	local bayer = userdata("u8",8,8)
 	bayer:set(0,0,
@@ -25,7 +31,6 @@ do
 		end
 	end
 end
-memmap(0x80000,dithers)
 
 local lin_colors = userdata("f64",3,64)
 for i=0,63 do
@@ -41,21 +46,18 @@ for i=0,63 do
 	cielab_colors:copy(color.linear_to_cielab(lin_colors:row(i)),true,0,i*3,3,0,0,1)
 end
 
-local lightnesses = lin_colors:column(0)
-
 local min_lightness,min_light_index = 1,0
 for i = 0,63 do
-	if lightnesses[i] < min_lightness then
-		min_lightness = lightnesses[i]
+	local lightness = lin_colors:row(i):dot(vec(0.2126,0.7152,0.0722))
+	if lightness < min_lightness then
+		min_lightness = lightness
 		min_light_index = i
 	end
 end
-
-local lightness_range = 8
-
-local lookups = userdata("u8",64,lightness_range*2+1)
+local lookups = userdata("u8",64,64*(lightness_range*2+1))
+memmap(lookup_address,lookups)
 -- The first lookup should be pure black, or as close as possible.
-lookups:copy(min_light_index,true,0,0,1,0,1,64)
+lookups:copy(min_light_index,true,0,0,64*64)
 
 for i = 1,lightness_range*2 do
 	local luminance_mul = 2^((i-lightness_range))
@@ -72,26 +74,13 @@ for i = 1,lightness_range*2 do
 				best_index = test_i
 			end
 		end
-		lookups:set(col_i,i,best_index)
+		lookups:copy(best_index,true,0,col_i*64+i*0x1000,64)
 	end
 end
 
-local col_table = userdata("u8",64,64)
-memmap(0x81000,col_table)
-
-local function set_lookup(i,addr)
-	col_table:copy(lookups:row(i),true,0,0,1,1,64,64)
-	col_table:copy(col_table,true,0, 1, 1,64,64,64)
-	col_table:copy(col_table,true,0, 2, 2,64,64,64)
-	col_table:copy(col_table,true,0, 4, 4,64,64,64)
-	col_table:copy(col_table,true,0, 8, 8,64,64,64)
-	col_table:copy(col_table,true,0,16,16,64,64,64)
-	col_table:copy(col_table,true,0,32,32,64,64,64)
-	memcpy(addr,0x81000,0x1000)
-end
-
-memcpy(0x81000,0x8000,0x1000)
-local orig_colormap = col_table:copy(col_table)
+local orig_colormap = userdata("u8",64,64)
+memmap(orig_colormap_address,orig_colormap)
+memcpy(orig_colormap_address,0x8000,0x1000)
 
 local color_transitions = lookups:height()-1
 local log2 = 1/log(2)
@@ -104,23 +93,22 @@ end
 
 local function set_luminance_tex(luminance)
 	local i = get_lookup_index(luminance)
-	set_lookup(i\1,0x8000)
-	set_lookup(ceil(i),0xA000)
-	memcpy(0x5500,0x80000+(((i%1)*64)\1)*8,8)
+	memcpy(0x5500,dithers_address+(i%1*64)\1*8,8)
+	memcpy(0x8000,lookup_address+i\1*0x1000,0x1000)
+	memcpy(0xA000,lookup_address+ceil(i)*0x1000,0x1000)
 	palt(0,true)
 end
 
 local function set_luminance_shape(luminance,col)
 	local i = get_lookup_index(luminance)
-	memcpy(0x5500,0x80000+(((i%1)*64)\1)*8,8)
-	local low_col = lookups:get(col,i\1)
-	local high_col = lookups:get(col,ceil(i))
+	memcpy(0x5500,dithers_address+(i%1*64)\1*8,8)
+	local low_col = lookups:get(1,col+i\1*64) -- Second column's a safer bet.
+	local high_col = lookups:get(1,col+ceil(i)*64)
 	return (high_col<<8)|low_col
 end
 
 local function reset_luminance()
-	col_table:copy(orig_colormap,true)
-	memcpy(0x8000,0x81000,0x1000)
+	memcpy(0x8000,orig_colormap_address,0x1000)
 	memset(0x5500,0,8)
 	palt(0,true)
 end
