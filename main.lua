@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-08-30 04:00:22",revision=18614]]
+--[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-11-03 05:25:48",revision=18618]]
 include"require.lua"
 include"profiler.lua"
 
@@ -153,7 +153,7 @@ local function draw_game()
 	
 	for chunk in sorted do
 		local model,mat,imat = unpack(chunk[1])
-		Rendering.queue_model(model,mat,imat,0.05,vec(0.1,0.4,0.3))
+		Rendering.queue_model(model,mat,imat,0.3,vec(0.2,0.7,0.5))
 		Rendering.draw_all()
 	end
 	
