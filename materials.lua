@@ -10,15 +10,15 @@ return {
 		properties = {tex = 3}
 	},
 	A109Chassis = {
-		shader = textri,
+		shader = lambtextri,
 		properties = {tex = 1}
 	},
 	Rotor = {
-		shader = textri,
+		shader = lambtextri,
 		properties = {tex = 5}
 	},
 	Tailrotor = {
-		shader = textri,
+		shader = lambtextri,
 		properties = {tex = 9}
 	},
 	Grass = {

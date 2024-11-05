@@ -1,13 +1,14 @@
 local color = require"blade3d.color"
 local log = math.log
 
+local rayleigh = vec(1.2,1.1,1)
 local lightness_range = 8
-local dithers_address = 0x80000
-local lookup_address = 0x81000
-local orig_colormap_address = lookup_address+0x1000*(lightness_range*2+1)
+local dithers_addr = 0x80000
+local lookup_addr = 0x81000
+local orig_colormap_addr = lookup_addr+0x1000*(lightness_range*2+1)
 
 local dithers = userdata("u8",8,64)
-memmap(dithers_address,dithers)
+memmap(dithers_addr,dithers)
 do
 	local bayer = userdata("u8",8,8)
 	bayer:set(0,0,
@@ -32,55 +33,92 @@ do
 	end
 end
 
-local lin_colors = userdata("f64",3,64)
-for i=0,63 do
-	local blue_b = peek(0x5000+i*4)
-	local green_b = peek(0x5000+i*4+1)
-	local red_b = peek(0x5000+i*4+2)
-	local rgb = vec(red_b,green_b,blue_b)/255
-	lin_colors:copy(color.srgb_to_linear(rgb),true,0,i*3,3,0,0,1)
-end
-
-local cielab_colors = userdata("f64",3,64)
-for i=0,63 do
-	cielab_colors:copy(color.linear_to_cielab(lin_colors:row(i)),true,0,i*3,3,0,0,1)
-end
-
-local min_lightness,min_light_index = 1,0
-for i = 0,63 do
-	local lightness = lin_colors:row(i):dot(vec(0.2126,0.7152,0.0722))
-	if lightness < min_lightness then
-		min_lightness = lightness
-		min_light_index = i
-	end
-end
 local lookups = userdata("u8",64,64*(lightness_range*2+1))
-memmap(lookup_address,lookups)
--- The first lookup should be pure black, or as close as possible.
-lookups:copy(min_light_index,true,0,0,64*64)
+memmap(lookup_addr,lookups)
 
-for i = 1,lightness_range*2 do
-	local luminance_mul = 2^((i-lightness_range))
+do
+	-- Contains the HDR color values of the original colormap.
+	local lin_colors = userdata("f64",3,64)
+	-- Contains the tone-mapped CIELAB values of the original colormap.
+	local cielab_colors = userdata("f64",3,64)
 	
-	for col_i = 0,lin_colors:height()-1 do
-		local col_lab = color.linear_to_cielab(lin_colors:row(col_i)*luminance_mul)
+	local min_lightness,min_light_index = 1,1
+	for i=0,63 do
+		local b8 = peek(0x5000+i*4)
+		local g8 = peek(0x5000+i*4+1)
+		local r8 = peek(0x5000+i*4+2)
 		
-		local best_dist,best_index = math.huge,0
+		-- We assume that the original palette colors are all sRGB, ACES
+		-- tone-mapped colors at a luminance of 1, so that we can extrapolate
+		-- the other luminance values from them.
+		-- This is why we undo the ACES tone-mapping here. We want the equivalent
+		-- raw, linear RGB values.
+		local aces_rgb = color.srgb_to_linear(vec(r8,g8,b8)/255)
+		local rgb = color.inverse_aces(aces_rgb)
 		
-		for test_i = 0,lin_colors:height()-1 do
-			local dist = (cielab_colors:row(test_i)-col_lab):magnitude()
-			if dist < best_dist then
-				best_dist = dist
-				best_index = test_i
-			end
+		lin_colors:copy(rgb,true,0,i*3,3,0,0,1)
+		-- Since CIELAB is used for perceptual color comparisons, we are
+		-- disregarding the tone mapping entirely.
+		-- The palette colors are what they are.
+		cielab_colors:copy(color.linear_to_cielab(aces_rgb),true,0,i*3,3,0,0,1)
+		
+		-- While we're looping through the colors, we might as well find the
+		-- darkest color in the palette to use as the 0 luminance color.
+		local lightness = rgb:dot(vec(0.2126,0.7152,0.0722))
+		if i ~= 0 and lightness < min_lightness then
+			min_lightness = lightness
+			min_light_index = i
 		end
-		lookups:copy(best_index,true,0,col_i*64+i*0x1000,64)
 	end
-end
+	-- The first lookup should be pure black, or as close as possible.
+	lookups:copy(min_light_index,true,0,1,63,0,64,64)
+	
+	for i = 1,lightness_range*2 do
+		local table_offset = i*0x1000
+		-- This equation makes each step in the lightness range logarithmic.
+		-- That way, we get more precision in the darker colors.
+		local luminance_mul = 2^((i-lightness_range)*0.7)
+		local rayleigh_lum = ((luminance_mul-1)*rayleigh+1)
+		rayleigh_lum.x = rayleigh_lum.x < 0 and 0 or rayleigh_lum.x
+		rayleigh_lum.y = rayleigh_lum.y < 0 and 0 or rayleigh_lum.y
+		rayleigh_lum.z = rayleigh_lum.z < 0 and 0 or rayleigh_lum.z
+		
+		-- Ew, O(n^2)
+		for col_i = 0,lin_colors:height()-1 do
+			-- Since we want the result to be tone-mapped, we do that before
+			-- converting to CIELAB for comparison.
+			local col_lab = color.linear_to_cielab(
+				color.aces_tonemap(
+					lin_colors:row(col_i)*rayleigh_lum
+				)
+			)
+			
+			local best_dist,best_index = math.huge,0
+			for test_i = 1,lin_colors:height()-1 do
+				-- Prioritize L (lightness), followed by A (green-magenta), and
+				-- then B (blue-yellow).
+				local dist = ((cielab_colors:row(test_i)-col_lab)*vec(1,0.7,0.5)):magnitude()
+				
+				if dist < best_dist then
+					best_dist = dist
+					best_index = test_i
+				end
+			end
+			
+			local row_offset = col_i*64
+			lookups:copy(best_index,true,0,row_offset+table_offset+1,63)
+		end
+	end
+	
+	lookups[0] = 0
+	lookups:copy(1,true,0,1,63)
+	lookups:add(lookups,true,0,1,63)
+	lookups:copy(lookups,true,0,0x1000,64,0x1000,0x1000,lightness_range*2+1)
 
-local orig_colormap = userdata("u8",64,64)
-memmap(orig_colormap_address,orig_colormap)
-memcpy(orig_colormap_address,0x8000,0x1000)
+	local orig_colormap = userdata("u8",64,64)
+	memmap(orig_colormap_addr,orig_colormap)
+	memcpy(orig_colormap_addr,0x8000,0x1000)
+end
 
 local color_transitions = lookups:height()-1
 local log2 = 1/log(2)
@@ -91,26 +129,25 @@ local function get_lookup_index(luminance)
 	return i
 end
 
+
 local function set_luminance_tex(luminance)
 	local i = get_lookup_index(luminance)
-	memcpy(0x5500,dithers_address+(i%1*64)\1*8,8)
-	memcpy(0x8000,lookup_address+i\1*0x1000,0x1000)
-	memcpy(0xA000,lookup_address+ceil(i)*0x1000,0x1000)
-	palt(0,true)
+	memcpy(0x5500,dithers_addr+(i%1*64)\1*8,8)
+	memcpy(0x8000,lookup_addr+i\1*0x1000,0x1000)
+	memcpy(0xA000,lookup_addr+ceil(i)*0x1000,0x1000)
 end
 
 local function set_luminance_shape(luminance,col)
 	local i = get_lookup_index(luminance)
-	memcpy(0x5500,dithers_address+(i%1*64)\1*8,8)
+	memcpy(0x5500,dithers_addr+(i%1*64)\1*8,8)
 	local low_col = lookups:get(1,col+i\1*64) -- Second column's a safer bet.
 	local high_col = lookups:get(1,col+ceil(i)*64)
 	return (high_col<<8)|low_col
 end
 
 local function reset_luminance()
-	memcpy(0x8000,orig_colormap_address,0x1000)
+	memcpy(0x8000,orig_colormap_addr,0x1000)
 	memset(0x5500,0,8)
-	palt(0,true)
 end
 
 return {

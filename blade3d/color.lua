@@ -31,7 +31,22 @@ local function linear_to_cielab(rgb)
 	)
 end
 
+local function aces_tonemap(rgb)
+	local mapped = (rgb*(2.51*rgb+0.03))/(rgb*(2.43*rgb+0.59)+0.14)
+	local r = mapped.x > 1 and 1 or mapped.x < 0 and 0 or mapped.x
+	local g = mapped.y > 1 and 1 or mapped.y < 0 and 0 or mapped.y
+	local b = mapped.z > 1 and 1 or mapped.z < 0 and 0 or mapped.z
+	return vec(r,g,b)
+end
+
+local function inverse_aces(rgb)
+	local a = 0.0009+rgb*1.3702-rgb*rgb*1.0127
+	return (rgb*-0.59+0.03-vec(sqrt(a.x),sqrt(a.y),sqrt(a.z)))/(rgb*4.86-5.02)
+end
+
 return {
 	srgb_to_linear = srgb_to_linear,
-	linear_to_cielab = linear_to_cielab
+	linear_to_cielab = linear_to_cielab,
+	aces_tonemap = aces_tonemap,
+	inverse_aces = inverse_aces,
 }

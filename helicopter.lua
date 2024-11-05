@@ -129,9 +129,9 @@ local function draw()
 		tail_rotor_mat:matmul3d(tail_rotor_pos_mat):matmul3d(model_mat),
 		model_imat:matmul3d(tail_rotor_pos_imat):matmul3d(tail_rotor_imat)
 	
-	Rendering.queue_model(r22,model_mat,model_imat,0.1,vec(0.2,0.7,0.5))
-	Rendering.queue_model(r22_rotor,rotor_mat,rotor_imat)
-	Rendering.queue_model(r22_tail_rotor,tail_rotor_mat,tail_rotor_imat)
+	Rendering.queue_model(r22,model_mat,model_imat,ambience,sun)
+	Rendering.queue_model(r22_rotor,rotor_mat,rotor_imat,ambience,sun)
+	Rendering.queue_model(r22_tail_rotor,tail_rotor_mat,tail_rotor_imat,ambience,sun)
 	
 	Rendering.queue_line(vec(-0.3569,-0.3005,-0.6508,1),vec(-0.5233,-0.8224,-0.6508,1),32,model_mat)
 	Rendering.queue_line(vec( 0.3569,-0.3005,-0.6508,1),vec( 0.5233,-0.8224,-0.6508,1),32,model_mat)

@@ -1,9 +1,14 @@
---[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-11-03 05:25:48",revision=18618]]
+--[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-11-05 23:51:55",revision=18626]]
 include"require.lua"
 include"profiler.lua"
 
+poke4(0x5000, get(fetch"/ram/cart/pal/0.pal"))
+
 profile.enabled(false,true)
 local show_forces = false
+
+sun = vec(0.3,0.8,0.6)
+ambience = 0.1
 
 local Rendering = require"blade3d.rendering"
 local Transform = require"blade3d.transform"
@@ -88,6 +93,7 @@ function update_game()
 	force_display = {}
 	Helicopter.update()
 	Camera.update()
+	sun = quat.vmul(vec(0.8,0,0.3),quat(vec(0,-1,0),(t()*0.05)%0.5))*abs(-sin(t()*0.05)*((t()*0.05)%1 > 0.5 and 0.2 or 3))
 end
 
 local sky_spr = get_spr(7)
@@ -153,7 +159,7 @@ local function draw_game()
 	
 	for chunk in sorted do
 		local model,mat,imat = unpack(chunk[1])
-		Rendering.queue_model(model,mat,imat,0.1,vec(0.2,0.7,0.5))
+		Rendering.queue_model(model,mat,imat,ambience,sun)
 		Rendering.draw_all()
 	end
 	
@@ -175,6 +181,12 @@ local function draw_game()
 	end
 	
 	draw_map(0,0)
+	
+	for i = 0,16 do
+		for j = 0,31 do
+			memcpy(0x10000+i*480+j+65,0x81000+i*0x1000+j*64+1,1)
+		end
+	end
 	
 	profile.draw()
 end
