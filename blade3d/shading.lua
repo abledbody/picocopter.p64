@@ -1,7 +1,7 @@
-local color = require"blade3d.color"
+local Color = require"blade3d.color"
 local log = math.log
 
-local rayleigh = vec(1.2,1.1,1)
+local rayleigh = vec(1.05,1.025,1)
 local lightness_range = 8
 local dithers_addr = 0x80000
 local lookup_addr = 0x81000
@@ -53,14 +53,14 @@ do
 		-- the other luminance values from them.
 		-- This is why we undo the ACES tone-mapping here. We want the equivalent
 		-- raw, linear RGB values.
-		local aces_rgb = color.srgb_to_linear(vec(r8,g8,b8)/255)
-		local rgb = color.inverse_aces(aces_rgb)
+		local aces_rgb = Color.srgb_to_linear(vec(r8,g8,b8)/255)
+		local rgb = Color.inverse_aces(aces_rgb)
 		
 		lin_colors:copy(rgb,true,0,i*3,3,0,0,1)
 		-- Since CIELAB is used for perceptual color comparisons, we are
 		-- disregarding the tone mapping entirely.
 		-- The palette colors are what they are.
-		cielab_colors:copy(color.linear_to_cielab(aces_rgb),true,0,i*3,3,0,0,1)
+		cielab_colors:copy(Color.linear_to_cielab(aces_rgb),true,0,i*3,3,0,0,1)
 		
 		-- While we're looping through the colors, we might as well find the
 		-- darkest color in the palette to use as the 0 luminance color.
@@ -87,8 +87,8 @@ do
 		for col_i = 0,lin_colors:height()-1 do
 			-- Since we want the result to be tone-mapped, we do that before
 			-- converting to CIELAB for comparison.
-			local col_lab = color.linear_to_cielab(
-				color.aces_tonemap(
+			local col_lab = Color.linear_to_cielab(
+				Color.aces_tonemap(
 					lin_colors:row(col_i)*rayleigh_lum
 				)
 			)
