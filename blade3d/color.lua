@@ -14,16 +14,12 @@ xyz_mat:set(0,0,
 )
 
 local function linear_to_cielab(rgb)
-	local xyz = rgb:matmul(xyz_mat)
-	
-	local function chan(t)
-		return t > 0.00885645167904 and t^(1/3) or 7.78703703704*t+16/116
-	end
+	local xyz = rgb:matmul(xyz_mat)/vec(95.047,100,108.883)
 	
 	local fx,fy,fz =
-		chan(xyz.x/95.047),
-		chan(xyz.y/100),
-		chan(xyz.z/108.883)
+		xyz.x > 0.00885645167904 and xyz.x^(1/3) or 7.78703703704*xyz.x+16/116,
+		xyz.y > 0.00885645167904 and xyz.y^(1/3) or 7.78703703704*xyz.y+16/116,
+		xyz.z > 0.00885645167904 and xyz.z^(1/3) or 7.78703703704*xyz.z+16/116
 	
 	return vec(116*fy-16,
 		500*(fx-fy),
@@ -34,7 +30,6 @@ end
 -- These functions consider the rgb to be 90% of the actual brightness because
 -- otherwise pure white would be considered intensely bright.
 local function aces_tonemap(rgb)
-	rgb /= 0.9
 	local mapped = (rgb*(2.51*rgb+0.03))/(rgb*(2.43*rgb+0.59)+0.14)
 	local r = mapped.x > 1 and 1 or mapped.x < 0 and 0 or mapped.x
 	local g = mapped.y > 1 and 1 or mapped.y < 0 and 0 or mapped.y
@@ -43,7 +38,6 @@ local function aces_tonemap(rgb)
 end
 
 local function inverse_aces(rgb)
-	rgb *= 0.9
 	local a = 0.0009+rgb*1.3702-rgb*rgb*1.0127
 	return (rgb*-0.59+0.03-vec(sqrt(a.x),sqrt(a.y),sqrt(a.z)))/(rgb*4.86-5.02)
 end

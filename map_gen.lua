@@ -113,7 +113,7 @@ local function to_chunks(chunks,graphical_map,heightmap,materials,map_size,chunk
 				local mat,imat = Transform.double_translate(
 					vec(x*chunk_size,z,y*chunk_size,1)
 			)
-			chunks[y][x] = {model,mat,imat}
+			chunks[y][x] = {model,mat,imat,{{vec(x*chunk_size+chunk_size/2,lerp(ne,sw,0.5),y*chunk_size+chunk_size/2,1),materials.Tree}}}
 			end
 		end
 	end

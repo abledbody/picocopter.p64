@@ -2,6 +2,8 @@
 local textri = require"blade3d.shaders.textri"
 local lambtri = require"blade3d.shaders.lambtri"
 local lambtextri = require"blade3d.shaders.lambtextri"
+local billboard = require"blade3d.shaders.billboard"
+local lambbillboard = require"blade3d.shaders.lambbillboard"
 
 
 return {
@@ -40,5 +42,9 @@ return {
 	Color22 = {
 		shader = lambtri,
 		properties = {col = 22}
+	},
+	Tree = {
+		shader = lambbillboard,
+		properties = {tex = 2, size = vec(8,8), pivot = vec(0.5,1)},
 	}
 }

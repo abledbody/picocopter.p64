@@ -3,6 +3,16 @@ local log = math.log
 
 local rayleigh = vec(1.05,1.025,1)
 local lightness_range = 8
+
+-- White is considered by the ACES color space to be infinitely bright.
+-- To compensate, we essentially just tell the inverse ACES
+-- function that the input is some fraction of the actual brightness so that
+-- the resulting HDR color is something more workable.
+-- Once it gets converted back to ACES, we scale it back up, so the
+-- luminance transformations are sensible, but this scaling factor doesn't
+-- directly affect the brightness of the color values.
+local filmic_compression = 2
+
 local dithers_addr = 0x80000
 local lookup_addr = 0x81000
 local orig_colormap_addr = lookup_addr+0x1000*(lightness_range*2+1)
@@ -54,7 +64,7 @@ do
 		-- This is why we undo the ACES tone-mapping here. We want the equivalent
 		-- raw, linear RGB values.
 		local aces_rgb = Color.srgb_to_linear(vec(r8,g8,b8)/255)
-		local rgb = Color.inverse_aces(aces_rgb)
+		local rgb = Color.inverse_aces(aces_rgb/filmic_compression)
 		
 		lin_colors:copy(rgb,true,0,i*3,3,0,0,1)
 		-- Since CIELAB is used for perceptual color comparisons, we are
@@ -88,13 +98,12 @@ do
 			-- Since we want the result to be tone-mapped, we do that before
 			-- converting to CIELAB for comparison.
 			local col_lab = Color.linear_to_cielab(
-				Color.aces_tonemap(
-					lin_colors:row(col_i)*rayleigh_lum
-				)
+				Color.aces_tonemap(lin_colors:row(col_i)*rayleigh_lum)
+				*filmic_compression
 			)
 			
 			local best_dist,best_index = math.huge,0
-			for test_i = 1,lin_colors:height()-1 do
+			for test_i = 0,lin_colors:height()-1 do
 				-- Prioritize L (lightness), followed by A (green-magenta), and
 				-- then B (blue-yellow).
 				local dist = ((cielab_colors:row(test_i)-col_lab)*vec(1,0.7,0.5)):magnitude()
@@ -106,12 +115,12 @@ do
 			end
 			
 			local row_offset = col_i*64
-			lookups:copy(best_index,true,0,row_offset+table_offset+1,63)
+			lookups:copy(best_index,true,0,row_offset+table_offset,64)
 		end
 	end
 	
 	lookups[0] = 0
-	lookups:copy(1,true,0,1,63)
+	lookups:copy(1,true,0,1,1,0,1,63)
 	lookups:add(lookups,true,0,1,63)
 	lookups:copy(lookups,true,0,0x1000,64,0x1000,0x1000,lightness_range*2+1)
 
@@ -153,5 +162,8 @@ end
 return {
 	set_luminance_tex = set_luminance_tex,
 	set_luminance_shape = set_luminance_shape,
-	reset_luminance = reset_luminance
+	reset_luminance = reset_luminance,
+	dithers_addr = dithers_addr,
+	lookup_addr = lookup_addr,
+	orig_colormap_addr = orig_colormap_addr,
 }

@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-11-06 05:06:09",revision=18665]]
+--[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-11-16 19:03:23",revision=18667]]
 include"require.lua"
 include"profiler.lua"
 
@@ -93,8 +93,9 @@ function update_game()
 	force_display = {}
 	Helicopter.update()
 	Camera.update()
-	sun = quat.vmul(vec(0.8,0,0.3),quat(vec(0,-1,0),(t()*0.05)%0.5))*abs(-sin(t()*0.05)*((t()*0.05)%1 > 0.5 and 0.1 or 3))
-	ambience = max(-sin(t()*0.05),0)*0.15+0.02
+	local period = 0.02
+	sun = quat.vmul(vec(0.8,0,0.3),quat(vec(0,-1,0),(t()*period)%0.5))*abs(-sin(t()*period)*((t()*period)%1 > 0.5 and 0.1 or 3))
+	ambience = max(-sin(t()*period),0)*0.15+0.02
 end
 
 local sky_spr = get_spr(7)
@@ -125,11 +126,11 @@ local function draw_map(x,y)
 end
 
 local function draw_game()
-	cls(12)
+	cls(0)
 	local cam_pos = Camera.get_pos()
 	local _,cam_pitch,cam_yaw = Camera.get_rot()
 	-- Sky
-	draw_sky(cam_pitch,cam_yaw)
+	--draw_sky(cam_pitch,cam_yaw)
 	
 	-- Chunks
 	local sortable_chunks = {}
@@ -159,8 +160,14 @@ local function draw_game()
 	profile"Z-sorting"
 	
 	for chunk in sorted do
-		local model,mat,imat = unpack(chunk[1])
+		local model,mat,imat,billboards = unpack(chunk[1])
 		Rendering.queue_model(model,mat,imat,ambience,sun)
+		if billboards then
+			for _,billboard in ipairs(billboards) do
+				local pt,props = unpack(billboard)
+				Rendering.queue_billboard(pt,props,ambience,sun)
+			end
+		end
 		Rendering.draw_all()
 	end
 	

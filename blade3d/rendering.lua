@@ -1,6 +1,7 @@
 --[[pod_format="raw",created="2024-05-22 18:18:28",modified="2024-10-30 01:19:02",revision=18436]]
 local Utils = require"blade3d.utils"
 local sort = Utils.tab_sort
+local quat = require"blade3d.quaternions"
 
 ---@class RenderCamera
 local camera
@@ -421,7 +422,6 @@ local function queue_model(model,mat,imat,ambience,light,light_intensity)
 	profile"Lighting"
 	local lums
 	if light then
-		light = light or vec(0,0,0)
 		-- For directional lights, the position needs to be stripped from the
 		-- inverse matrix.
 		local light_pos = light:matmul3d(
@@ -504,6 +504,38 @@ local function queue_line(p1,p2,col,mat)
 	})
 end
 
+local function queue_billboard(pt,material,ambience,light,light_intensity)
+	local relative_cam_pos = pt-camera.position
+	local depth = relative_cam_pos:dot(relative_cam_pos)
+	
+	local props = setmetatable({},{__index = material.properties})
+	if light then
+		local light_mag = light:magnitude()+0.00001
+		local illuminance = light_intensity
+			and light_intensity/(light_mag*light_mag) -- Inverse square falloff
+			or light_mag
+		
+		props.light = (quat.vmul(vec(0,0,-1),quat.inv(camera.rotation)):dot(light/light_mag)*0.5+0.5)
+			*illuminance
+			+ambience
+	elseif ambience then
+		props.light = ambience
+	end
+	
+	pt = perspective_point(pt:matmul(camera:get_vp_matrix()))
+	
+	if pt.z > pt[3] or pt.z < -pt[3] then return end
+	
+	props.size *= pt[3]*camera.target:height()*0.5 --NDC spans -1 to 1.
+	pt:mul(camera.cts_mul,true,0,0,3)
+		:add(camera.cts_add,true,0,0,3)
+	
+	add(draw_queue,{
+		func = function() material.shader(props,pt) end,
+		z = depth
+	})
+end
+
 return {
 	set_camera = set_camera,
 	perspective_point = perspective_point,
@@ -511,5 +543,6 @@ return {
 	in_frustum = in_frustum,
 	queue_model = queue_model,
 	queue_line = queue_line,
+	queue_billboard = queue_billboard,
 	draw_all = draw_all,
 }
