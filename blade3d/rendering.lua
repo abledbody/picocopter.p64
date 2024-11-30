@@ -60,9 +60,9 @@ local function clip_tris(model)
 		if not skip_tris[i] then
 			local i1,i2,i3 = indices:get(0,i,3)
 			local p1,p2,p3 =
-				pts:row(i1),
-				pts:row(i2),
-				pts:row(i3)
+				pts:row(i1/4),
+				pts:row(i2/4),
+				pts:row(i3/4)
 			local w1,w2,w3 = p1[3],p2[3],p3[3]
 			
 			-- The near clipping plane is the only one that's actually clipped.
@@ -183,7 +183,8 @@ local function clip_tris(model)
 			uv2[0],uv2[1],
 			uv3[0],uv3[1]
 		)
-		gen_indices:set(0,tri_i,vert_i,vert_i+1,vert_i+2)
+		local i1 = vert_i*4
+		gen_indices:set(0,tri_i,i1,i1+4,i1+8)
 		
 		-- Copy over the extra data from the original triangle.
 		gen_materials[tri_i] = verts[4]
@@ -235,7 +236,8 @@ local function clip_tris(model)
 			uv2[0],uv2[1],
 			uv4[0],uv4[1]
 		)
-		local i1,i2,i3,i4 = vert_i,vert_i+1,vert_i+2,vert_i+3
+		local i1 = vert_i*4
+		local i2,i3,i4 = i1+4,i1+8,i1+12
 		gen_indices:set(0,tri_i,
 			i1,i2,i3,
 			i3,i2,i4
@@ -273,23 +275,21 @@ local function draw_model(model,cts_mul,cts_add,screen_height)
 	
 	profile"Perspective"
 	pts = perspective_points(pts:copy(pts))
-	pts:mul(cts_mul,true,0,0,3,0,4,pts:height())
-	pts:add(cts_add,true,0,0,3,0,4,pts:height())
+		:mul(cts_mul,true,0,0,3,0,4,pts:height())
+		:add(cts_add,true,0,0,3,0,4,pts:height())
 	profile"Perspective"
 	
 	profile"Model iteration"
 	for j = 0,indices:height()-1 do
 		if not skip_tris[j] then
 			local tri_i = j*3
-			local p1,p2,p3 =
-				pts:row(indices[tri_i]),
-				pts:row(indices[tri_i+1]),
-				pts:row(indices[tri_i+2])
-			
-			local uv1,uv2,uv3 =
-				uvs:row(tri_i),
-				uvs:row(tri_i+1),
-				uvs:row(tri_i+2)
+			-- To be able to use the userdata sort, we have to pack all
+			-- the data for each vertex into the rows of a matrix.
+			local vert_data = userdata("f64",6,3)
+				:copy(pts,true,indices[tri_i],0,4)
+				:copy(pts,true,indices[tri_i+1],6,4)
+				:copy(pts,true,indices[tri_i+2],12,4)
+				:copy(uvs,true,tri_i*2,4,2,2,6,3)
 			
 			local material = materials[j]
 			local shader,properties = material.shader, material.properties
@@ -300,7 +300,7 @@ local function draw_model(model,cts_mul,cts_add,screen_height)
 			
 			add(draw_queue,{
 				func = function()
-					shader(props_in,p1,p2,p3,uv1,uv2,uv3,screen_height)
+					shader(props_in,vert_data,screen_height)
 				end,
 				z = depths[j]
 			})

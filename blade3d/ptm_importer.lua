@@ -29,6 +29,7 @@ return function(path,material_lookup)
 	-- .pcm file indices refer to matrix rows, but flat indices are faster
 	-- and more convenient for userdata operations.
 	uv_indices *= 2
+	pt_indices *= 4
 	
 	-- Calculate the AABB and create a sphere which encompasses it.
 	-- This is used for efficient frustum culling.
@@ -92,9 +93,9 @@ return function(path,material_lookup)
 		
 		-- Truncate the points to 3 dimensions. We're not in 4D just yet.
 		local p1,p2,p3 =
-			userdata("f64",3):copy(ptm_pts,true,pt_indices[i*3  ]*4,0,3),
-			userdata("f64",3):copy(ptm_pts,true,pt_indices[i*3+1]*4,0,3),
-			userdata("f64",3):copy(ptm_pts,true,pt_indices[i*3+2]*4,0,3)
+			userdata("f64",3):copy(ptm_pts,true,pt_indices[i*3  ],0,3),
+			userdata("f64",3):copy(ptm_pts,true,pt_indices[i*3+1],0,3),
+			userdata("f64",3):copy(ptm_pts,true,pt_indices[i*3+2],0,3)
 		
 		-- pcm does not come with pre-baked normals to save space.
 		local norm = (p3-p1):cross(p2-p1)

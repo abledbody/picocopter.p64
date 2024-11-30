@@ -2,36 +2,29 @@ local scanlines = userdata("f64",5,270)
 
 ---Draws a solid color triangle to the screen.
 ---@param props table The properties passed to the shader. Expects a `col` field with a color index.
----@param p1 userdata The XY coordinates of the first vertex.
----@param p2 userdata The XY coordinates of the second vertex.
----@param p3 userdata The XY coordinates of the third vertex.
+---@param vert_data userdata A 6x3 matrix where each row is the xyzwuv of a vertex.
 ---@param screen_height number The height of the screen, used for scanline truncation.
-return function(props,p1,p2,p3,_,_,_,screen_height)
+return function(props,vert_data,screen_height)
 	profile"Triangle setup"
 	local col = props.col
 	
 	-- To make it so that rasterizing top to bottom is always correct,
 	-- and so that we know at which point to switch the minor side's slope,
 	-- we need the vertices to be sorted by y.
-	if p1.y > p2.y then
-		p1,p2 = p2,p1
-	end
-	if p2.y > p3.y then
-		p2,p3 = p3,p2
-	end
-	if p1.y > p2.y then
-		p1,p2 = p2,p1
-	end
+	vert_data:sort(1)
 	
-	-- Since the y components are used extensively, we'll store them in
+	-- These values are used extensively in the setup, so we'll store them in
 	-- local variables.
-	local y1,y2,y3 = p1.y,p2.y,p3.y
+	local x1,y1, y2, x3,y3 = 
+		vert_data[0],vert_data[1],
+		vert_data[7],
+		vert_data[12],vert_data[13]
 	
 	local v1,v2 = 
-		vec(p1.x,p1.y,p1.x,p1.y,col),
+		vec(x1,y1,x1,y1,col),
 		vec(
-			p2.x,p2.y,
-			(p3.x-p1.x)*(p2.y-p1.y)/(p3.y-p1.y)+p1.x, p2.y,
+			vert_data[6],y2,
+			(x3-x1)*(y2-y1)/(y3-y1)+x1, y2,
 			col
 		)
 	profile"Triangle setup"
@@ -57,7 +50,7 @@ return function(props,p1,p2,p3,_,_,_,screen_height)
 	if dy > 0 then
 		-- This is, otherwise, the only place where v3 would be used,
 		-- so we just inline it.
-		local slope = (vec(p3.x,p3.y,p3.x,p3.y,col)-v2)/(y3-y2)
+		local slope = (vec(x3,y3,x3,y3,col)-v2)/(y3-y2)
 		
 		scanlines:copy(slope*(mid_y+1-y2)+v2,true,0,0,5)
 			:copy(slope,true,0,5,5,0,5,dy-1)
