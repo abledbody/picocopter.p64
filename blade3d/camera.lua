@@ -10,13 +10,13 @@ local quat = require"blade3d.quaternions"
 local function project(n,f,s,a)
 	local d = n-f
 	local mat = userdata("f64",4,4)
-	-- Note: blade3d uses inverse depth, which means that depth is calculated
-	-- as 1/z instead of z.
+	-- Note: blade3d uses reverse depth, which means that the near plane is at
+	-- 0, and the far plane is at 1.
 	mat:set(0,0,
-		  s,  0,     0, 0,
-		  0,s*a,     0, 0,
-		  0,  0,   n/d,-1,
-		  0,  0,-n*f/d, 0
+		  s,  0,  0, 0,
+		  0,s*a,  0, 0,
+		  0,  0,1/d,-1,
+		  0,  0,n/d, 0
 	)
 	return mat
 end

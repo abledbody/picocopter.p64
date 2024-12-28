@@ -5,7 +5,7 @@
 
 ---@class Material
 ---@field shader Shader The shader to use for rendering.
----@field properties any The properties passed to the shader.
+---@field __index table? The properties passed to the shader.
 
 ---@alias MaterialLookup table<string,Material>
 
@@ -79,13 +79,8 @@ return function(path,material_lookup)
 		
 		-- Transform uvs if the material uses a texture property,
 		-- because picotron uses texel coordinates, not normalized coordinates.
-		local tex
-		if type(mtl.properties) == "userdata" then
-			tex = mtl.properties
-		elseif type(mtl.properties) == "table" and mtl.properties.tex then
-			tex = get_spr(mtl.properties.tex)
-		end
-		if tex then
+		if mtl.__index and mtl.__index.tex then
+			local tex = get_spr(mtl.__index.tex)
 			uvs:mul(vec(tex:width(),tex:height()),true,0,i*6,2,0,2,3)
 		end
 		

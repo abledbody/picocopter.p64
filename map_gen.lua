@@ -9,12 +9,12 @@ local heightmap_cols = {
 	[0] = 32,1,19,16,3,17,27,12,11,26,28,7
 }
 
-local t_pt_indices = userdata("f64",3,2)
+local t_pt_indices = userdata("i32",3,2)
 t_pt_indices:set(0,0,
 	0,1,2,
 	1,3,2
 )
-local t_uv_indices = userdata("f64",3,2)
+local t_uv_indices = userdata("i32",3,2)
 t_uv_indices:set(0,0,
 	0,1,2,
 	1,3,2
@@ -27,7 +27,8 @@ t_uvs:set(0,0,
 	1,1
 )
 local t_mats = {"Grass"}
-local t_mat_indices = vec(1,1)
+local t_mat_indices = userdata("i32",2)
+t_mat_indices:set(0,1,1)
 
 local function make_heightmap(seed,size,scale,octaves)
 	local w,h = size.x,size.y

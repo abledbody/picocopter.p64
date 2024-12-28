@@ -9,42 +9,42 @@ local lambbillboard = require"blade3d.shaders.lambbillboard"
 return {
 	RobinsonR22Chassis = {
 		shader = lambtextri,
-		properties = {tex = 3}
+		__index = {tex = 3}
 	},
 	A109Chassis = {
 		shader = lambtextri,
-		properties = {tex = 1}
+		__index = {tex = 1}
 	},
 	Rotor = {
 		shader = lambtextri,
-		properties = {tex = 5}
+		__index = {tex = 5}
 	},
 	Tailrotor = {
 		shader = lambtextri,
-		properties = {tex = 9}
+		__index = {tex = 9}
 	},
 	Grass = {
 		shader = lambtextri,
-		properties = {tex = 4}
+		__index = {tex = 4}
 	},
 	Windows1 = {
 		shader = lambtextri,
-		properties = {tex = 6}
+		__index = {tex = 6}
 	},
 	Shadow = {
 		shader = textri,
-		properties = {tex = 8}
+		__index = {tex = 8}
 	},
 	Color5 = {
 		shader = lambtri,
-		properties = {col = 5}
+		__index = {col = 5}
 	},
 	Color22 = {
 		shader = lambtri,
-		properties = {col = 22}
+		__index = {col = 22}
 	},
 	Tree = {
 		shader = lambbillboard,
-		properties = {tex = 2, size = vec(8,8), pivot = vec(0.5,1)},
+		__index = {tex = 2, size = vec(8,8), pivot = vec(0.5,1)},
 	}
 }
