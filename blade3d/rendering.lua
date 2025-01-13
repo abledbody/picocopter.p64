@@ -504,7 +504,9 @@ local function queue_billboard(pt,material,ambience,light,light_intensity)
 			and light_intensity/(light_mag*light_mag) -- Inverse square falloff
 			or light_mag
 		
-		props.light = (quat.vmul(vec(0,0,-1),quat.inv(camera.rotation)):dot(light/light_mag)*0.5+0.5)
+		local lum = quat.vmul(vec(0,0,-1),quat.inv(camera.rotation))
+			:dot(light/light_mag)
+		props.light = (lum > 0 and lum or 0)
 			*illuminance
 			+ambience
 	elseif ambience then
