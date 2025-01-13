@@ -1,7 +1,7 @@
 local Color = require"blade3d.color"
 local log = math.log
 
-local rayleigh = vec(1.05,1.025,1)
+local rayleigh = vec(1.025,1.0125,1)
 local lightness_range = 8
 
 -- White is considered by the ACES color space to be infinitely bright.
@@ -49,8 +49,8 @@ memmap(lookup_addr,lookups)
 do
 	-- Contains the HDR color values of the original colormap.
 	local lin_colors = userdata("f64",3,64)
-	-- Contains the tone-mapped CIELAB values of the original colormap.
-	local cielab_colors = userdata("f64",3,64)
+	-- Contains the tone-mapped oklab values of the original colormap.
+	local oklab_colors = userdata("f64",3,64)
 	
 	local min_lightness,min_light_index = 1,1
 	for i=0,63 do
@@ -67,10 +67,10 @@ do
 		local rgb = Color.inverse_aces(aces_rgb/filmic_compression)
 		
 		lin_colors:copy(rgb,true,0,i*3,3,0,0,1)
-		-- Since CIELAB is used for perceptual color comparisons, we are
+		-- Since oklab is used for perceptual color comparisons, we are
 		-- disregarding the tone mapping entirely.
 		-- The palette colors are what they are.
-		cielab_colors:copy(Color.linear_to_cielab(aces_rgb),true,0,i*3,3,0,0,1)
+		oklab_colors:copy(Color.linear_to_oklab(aces_rgb),true,0,i*3,3,0,0,1)
 		
 		-- While we're looping through the colors, we might as well find the
 		-- darkest color in the palette to use as the 0 luminance color.
@@ -96,8 +96,8 @@ do
 		-- Ew, O(n^2)
 		for col_i = 0,lin_colors:height()-1 do
 			-- Since we want the result to be tone-mapped, we do that before
-			-- converting to CIELAB for comparison.
-			local col_lab = Color.linear_to_cielab(
+			-- converting to oklab for comparison.
+			local col_lab = Color.linear_to_oklab(
 				Color.aces_tonemap(lin_colors:row(col_i)*rayleigh_lum)
 				*filmic_compression
 			)
@@ -106,7 +106,7 @@ do
 			for test_i = 0,lin_colors:height()-1 do
 				-- Prioritize L (lightness), followed by A (green-magenta), and
 				-- then B (blue-yellow).
-				local dist = ((cielab_colors:row(test_i)-col_lab)*vec(1,0.7,0.5)):magnitude()
+				local dist = ((oklab_colors:row(test_i)-col_lab)*vec(1,0.7,0.5)):magnitude()
 				
 				if dist < best_dist then
 					best_dist = dist
