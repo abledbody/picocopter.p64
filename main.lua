@@ -7,8 +7,8 @@ poke4(0x5000, get(fetch"/ram/cart/pal/0.pal"))
 profile.enabled(false,true)
 local show_forces = false
 
-sun = vec(0.3,0.8,0.6)
-ambience = 0.1
+sun = vec(0.25,0.64,0.5)
+ambience = 0.25
 
 local Rendering = require"blade3d.rendering"
 local Transform = require"blade3d.transform"
@@ -93,9 +93,6 @@ function update_game()
 	force_display = {}
 	Helicopter.update()
 	Camera.update()
-	local period = 0.02
-	sun = quat.vmul(vec(0.8,0,0.3),quat(vec(0,-1,0),(t()*period)%0.5))*abs(-sin(t()*period)*((t()*period)%1 > 0.5 and 0.1 or 3))
-	ambience = max(-sin(t()*period),0)*0.15+0.02
 end
 
 local sky_spr = get_spr(7)
@@ -126,11 +123,11 @@ local function draw_map(x,y)
 end
 
 local function draw_game()
-	cls(0)
+	cls(12)
 	local cam_pos = Camera.get_pos()
 	local _,cam_pitch,cam_yaw = Camera.get_rot()
 	-- Sky
-	--draw_sky(cam_pitch,cam_yaw)
+	draw_sky(cam_pitch,cam_yaw)
 	
 	-- Chunks
 	local sortable_chunks = {}
