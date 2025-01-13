@@ -102,7 +102,7 @@ end
 ---@return userdata @A scaling matrix.
 local function scale(scale)
 	local x,y,z = scale.x,scale.y,scale.z
-	mat = userdata("f64",4,4)
+	local mat = userdata("f64",4,4)
 	mat:set(0,0,
 		x,0,0,0,
 		0,y,0,0,
