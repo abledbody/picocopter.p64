@@ -5,7 +5,7 @@ local scanlines = userdata("f64",5,270)
 ---@param vert_data userdata A 6x3 matrix where each row is the xyzwuv of a vertex.
 ---@param screen_height number The height of the screen, used for scanline truncation.
 return function(props,vert_data,screen_height)
-	profile"Triangle setup"
+	profile"Triangle drawing"
 	local col = props.col
 	
 	-- To make it so that rasterizing top to bottom is always correct,
@@ -27,9 +27,7 @@ return function(props,vert_data,screen_height)
 			(x3-x1)*(y2-y1)/(y3-y1)+x1, y2,
 			col
 		)
-	profile"Triangle setup"
 	
-	profile"Triangle drawing"
 	local start_y = y1 < -1 and -1 or y1\1
 	local mid_y = y2 < -1 and -1 or y2 > screen_height-1 and screen_height-1 or y2\1
 	local stop_y = (y3 <= screen_height-1 and y3\1 or screen_height-1)

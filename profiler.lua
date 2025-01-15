@@ -77,34 +77,34 @@ function profile.clear_lingers()
 	lingers = {}
 end
 
-local function draw_cpu()
-	print("cpu:"..string.sub(stat(1)*100,1,5).."%",1,1,7)
+local function draw_cpu(col)
+	print("cpu:"..string.sub(stat(1)*100,1,5).."%",1,1,col)
 end
 
 -- This draws the profiles, and then resets everything for the next frame.
 -- If it is not called, usage metrics will accumulate.
 -- Lingering profiles are always displayed after persistent profiles.
-local function display_profiles()
+local function display_profiles(col)
 	local i = 1
 	for prof in all(profiles) do
 		local usage = string.sub(prof.time*100,1,5).."%"
 		local to_print = prof.name..":"..usage
-		print(to_print,1,1+i*9,7)
+		print(to_print,1,1+i*9,col)
 		i = i+1
 	end
 	for name,prof in pairs(lingers) do
 		local usage = string.sub(prof.time*100,1,5).."%"
 		local to_print = name..(prof.this_frame and "[X]:" or "[ ]:")..usage
-		print(to_print,1,1+i*9,7)
+		print(to_print,1,1+i*9,col)
 		prof.this_frame = false
 		i = i+1
 	end
 	profiles = {}
 end
 
-local function display_both()
-	draw_cpu()
-	display_profiles()
+local function display_both(col)
+	draw_cpu(col)
+	display_profiles(col)
 end
 
 -- This swaps out function calls depending on whether or not you want to have

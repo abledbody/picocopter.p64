@@ -187,13 +187,13 @@ local function draw_game()
 	
 	draw_map(0,0)
 	
-	for i = 0,16 do
+--[[ 	for i = 0,16 do
 		for j = 0,63 do
 			memcpy(0x10000+i*480+j+65,0x81000+i*0x1000+j*64+1,1)
 		end
-	end
+	end ]]
 	
-	profile.draw()
+	profile.draw(7)
 end
 
 local gen_co = cocreate(function()

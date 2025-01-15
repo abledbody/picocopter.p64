@@ -134,29 +134,34 @@ local log2 = 1/log(2)
 local function get_lookup_index(luminance)
 	if luminance <= 0 then return 0 end
 	local i = log(luminance)*log2+lightness_range
-	i = i > color_transitions and color_transitions or i
-	return i
+	return i > color_transitions and color_transitions or i
 end
 
 
 local function set_luminance_tex(luminance)
+	profile"shading"
 	local i = get_lookup_index(luminance)
 	memcpy(0x5500,dithers_addr+(i%1*64)\1*8,8)
 	memcpy(0x8000,lookup_addr+i\1*0x1000,0x1000)
 	memcpy(0xA000,lookup_addr+ceil(i)*0x1000,0x1000)
+	profile"shading"
 end
 
 local function set_luminance_shape(luminance,col)
+	profile"shading"
 	local i = get_lookup_index(luminance)
 	memcpy(0x5500,dithers_addr+(i%1*64)\1*8,8)
 	local low_col = lookups:get(1,col+i\1*64) -- Second column's a safer bet.
 	local high_col = lookups:get(1,col+ceil(i)*64)
+	profile"shading"
 	return (high_col<<8)|low_col
 end
 
 local function reset_luminance()
+	profile"shading"
 	memcpy(0x8000,orig_colormap_addr,0x1000)
 	memset(0x5500,0,8)
+	profile"shading"
 end
 
 return {

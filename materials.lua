@@ -2,7 +2,6 @@
 local textri = require"blade3d.shaders.textri"
 local lambtri = require"blade3d.shaders.lambtri"
 local lambtextri = require"blade3d.shaders.lambtextri"
-local billboard = require"blade3d.shaders.billboard"
 local lambbillboard = require"blade3d.shaders.lambbillboard"
 
 
