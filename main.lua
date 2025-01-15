@@ -16,7 +16,7 @@ local B3dUtils = require"blade3d.utils"
 
 local Helicopter = require"helicopter"
 local Camera = require"camera"
-local Level = require"level"
+local Map = require"map"
 local Chunk = require"chunk"
 local TILE_SIZE = Chunk.TILE_SIZE
 
@@ -34,45 +34,16 @@ function coplow(co)
 	end
 end
 
-local map_dat = fetch"/ram/cart/pclv/basin.pclv"
-local heightmap = map_dat.heightmap
-local mapw,maph = heightmap:width(),heightmap:height()
-local chunks = Level.load(map_dat)
-
-local function get_chunk_pos(x,y)
-	return x/TILE_SIZE,y/TILE_SIZE
-end
+map = Map.load"basin"
+local mapw,maph = map.width,map.height
 
 local sqrt2 = sqrt(2)
-
-function get_height(x,y)
-	local mapx,mapy = get_chunk_pos(x,y)
-	mapx,mapy = mid(mapx,0,mapw),mid(mapy,0,maph)
-	local nw,ne = heightmap:get(flr(mapx),flr(mapy),2)
-	local sw,se = heightmap:get(flr(mapx),ceil(mapy),2)
-	
-	--[[
-	local in_chunk = vec(mapx%1,mapy%1)
-	local diag_t = vec(0.5,-0.5):dot(vec(in_chunk.x,in_chunk.y-1))
-	local cross_diag_t = vec(0.5,0.5):dot(in_chunk)
-	local diag = Utils.lerp(sw,ne,diag_t)
-	
-	if cross_diag_t > 0.5 then
-		return Utils.lerp(diag,se,cross_diag_t*2-1)
-	else
-		return Utils.lerp(nw,diag,cross_diag_t*2)
-	end]]
-	
-	local n = B3dUtils.lerp(nw,ne,mapx%1)
-	local s = B3dUtils.lerp(sw,se,mapx%1)
-	return B3dUtils.lerp(n,s,mapy%1)*TILE_SIZE
-end
 
 local graphical_map = userdata("u8",mapw,maph)
 
 local heli_body = Helicopter.get_body()
 heli_body.position = vec(mapw*TILE_SIZE*0.5,0,maph*TILE_SIZE*0.5)
-heli_body.position.y = get_height(heli_body.position.x,heli_body.position.z)
+heli_body.position.y = map:get_height(heli_body.position.x,heli_body.position.z)
 
 function update_game()
 	force_display = {}
@@ -115,7 +86,7 @@ local function draw_game()
 	draw_sky(cam_pitch,cam_yaw)
 	
 	-- Chunks
-	Level.draw(chunks,cam_pos)
+	map:draw(cam_pos)
 	
 	-- Helicopter
 	Helicopter.draw()

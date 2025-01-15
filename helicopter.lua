@@ -89,7 +89,7 @@ local function update()
 	note(0,6,vol,0,0,10,false)
 	
 	-- Collision
-	floor_height = get_height(body.position.x,body.position.z)
+	floor_height = map:get_height(body.position.x,body.position.z)
 	local center_from_floor = floor_height+0.9
 
 	if body.position.y <= center_from_floor then
