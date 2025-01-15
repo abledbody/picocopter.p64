@@ -9,6 +9,7 @@ window()
 local render_cam = B3dCamera.new(0.5,196,B3dCamera.get_fov_slope(110),get_display())
 Rendering.set_camera(render_cam)
 
+local DRAW_DIST = 4
 local cam_pos = vec(0,2,3)
 local cam_rot = vec(0,0,0,1)
 local cam_offset = vec(0,3,6)
@@ -55,6 +56,7 @@ local function set_target(target)
 end
 
 return {
+	DRAW_DIST = DRAW_DIST,
 	get_pos = get_pos,
 	get_rot = get_rot,
 	update = update,
