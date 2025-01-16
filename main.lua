@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2024-05-22 17:25:58",modified="2024-11-16 19:03:23",revision=18667]]
+--[[pod_format="raw",created="2024-05-22 17:25:58",modified="2025-01-16 22:46:11",revision=18669]]
 include"require.lua"
 include"profiler.lua"
 
@@ -18,6 +18,7 @@ local Helicopter = require"helicopter"
 local Camera = require"camera"
 local Map = require"map"
 local Chunk = require"chunk"
+local Minimap = require"minimap"
 local TILE_SIZE = Chunk.TILE_SIZE
 
 local loops
@@ -36,10 +37,8 @@ end
 
 map = Map.load"basin"
 local mapw,maph = map.width,map.height
+local minimap = Minimap.new(map)
 
-local sqrt2 = sqrt(2)
-
-local graphical_map = userdata("u8",mapw,maph)
 
 local heli_body = Helicopter.get_body()
 heli_body.position = vec(mapw*TILE_SIZE*0.5,0,maph*TILE_SIZE*0.5)
@@ -58,24 +57,6 @@ local function draw_sky(pitch,yaw)
 	local sky_y_off = abs(pitch*1920)
 	blit(sky_spr,0,-sky_x_off,sky_y_off,0,0,480,270-sky_y_off)
 	blit(sky_spr,0,-sky_x_off+480,sky_y_off,0,0,480,270-sky_y_off)
-end
-
-local function draw_map(x,y)
-	rect(x,y,x+mapw+1,y+maph+1,16)
-	sspr(graphical_map,0,0,mapw,maph,x+1,y+1)
-	
-	if time()%0.8 > 0.2 then
-		local hx,hy =
-			flr(heli_body.position.x/TILE_SIZE+x+1),
-			flr(heli_body.position.z/TILE_SIZE+y+1)
-		
-		local up = vec(0,1,0)
-		local angle = quat.angle(quat.twist(heli_body.rotation,up),up)-0.25
-		local fwd_x,fwd_y = cos(angle),-sin(angle)
-		
-		line(hx+fwd_x*sqrt2,hy+fwd_y*sqrt2,hx+fwd_x*6,hy+fwd_y*6,9)
-		circ(hx,hy,1,9)
-	end
 end
 
 local function draw_game()
@@ -105,7 +86,7 @@ local function draw_game()
 		Rendering.draw_all()
 	end
 	
-	draw_map(0,0)
+	minimap:draw(0,270-map.height-2,heli_body)
 	
 --[[ 	for i = 0,16 do
 		for j = 0,63 do

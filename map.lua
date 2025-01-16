@@ -106,6 +106,11 @@ local function load(level_name)
 	local map_dat = fetch("/ram/cart/pclv/"..level_name..".pclv")
 	local heightmap,tiles = map_dat.heightmap,map_dat.tiles
 
+	---@class Map
+	---@field heightmap userdata
+	---@field tiles userdata
+	---@field width number
+	---@field height number
 	local map = setmetatable({
 		heightmap = heightmap,
 		tiles = tiles,
