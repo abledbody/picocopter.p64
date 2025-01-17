@@ -45,5 +45,21 @@ return {
 	Tree = {
 		shader = lambbillboard,
 		__index = {tex = 2, size = vec(8,8), pivot = vec(0.5,1)},
-	}
+	},
+	Road = {
+		shader = lambtextri,
+		__index = {tex = 10}
+	},
+	["Road diag"] = {
+		shader = lambtextri,
+		__index = {tex = 11}
+	},
+	["Road T"] = {
+		shader = lambtextri,
+		__index = {tex = 12}
+	},
+	["Road cross"] = {
+		shader = lambtextri,
+		__index = {tex = 13}
+	},
 }

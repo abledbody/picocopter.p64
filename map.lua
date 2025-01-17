@@ -8,14 +8,64 @@ local materials = require"materials"
 
 local building = import_ptm("mdl/Building1.ptm",materials)
 
+local function get_corner_heights(x,y,heightmap)
+	local nw,ne = heightmap:get(x,y,2)
+	local sw,se = heightmap:get(x,y+1,2)
+	return nw,ne,sw,se
+end
+
+local road_tiles = {
+	[0b0000] = {"Road cross",1},
+	[0b0001] = {"Road",1},
+	[0b0010] = {"Road",2},
+	[0b0011] = {"Road diag",1},
+	[0b0100] = {"Road",1},
+	[0b0101] = {"Road",1},
+	[0b0110] = {"Road diag",2},
+	[0b0111] = {"Road T",3},
+	[0b1000] = {"Road",2},
+	[0b1001] = {"Road diag",4},
+	[0b1010] = {"Road",2},
+	[0b1011] = {"Road T",2},
+	[0b1100] = {"Road diag",3},
+	[0b1101] = {"Road T",1},
+	[0b1110] = {"Road T",4},
+	[0b1111] = {"Road cross",1},
+}
+
 local tile_generators = {
-	[0] = function(x,y,nw,ne,sw,se)
+	[0] = function(x,y,map)
+		local nw,ne,sw,se = get_corner_heights(x,y,map.heightmap)
+
 		return Chunk.new(
 			Chunk.terrain_model("Grass",ne-nw,sw-nw,se-nw),vec(x,y),nw
 		)
 	end,
-	function(x,y,nw,ne,sw,se)
+	[1] = function(x,y,map)
+		local nw = map.heightmap:get(x,y)
 		return Chunk.new(building,vec(x,y),nw)
+	end,
+	[2] = function(x,y,map)
+		local nw,ne,sw,se = get_corner_heights(x,y,map.heightmap)
+		
+		local tn,te,ts,tw =
+			map.tiles:get(x,y-1),
+			map.tiles:get(x+1,y),
+			map.tiles:get(x,y+1),
+			map.tiles:get(x-1,y)
+		
+		tn,te,ts,tw =
+			tn == 2 and 1 or 0,
+			te == 2 and 1 or 0,
+			ts == 2 and 1 or 0,
+			tw == 2 and 1 or 0
+		
+		local neighbors = te|tn<<1|tw<<2|ts<<3
+		local tile = road_tiles[neighbors]
+
+		return Chunk.new(
+			Chunk.terrain_model(tile[1],ne-nw,sw-nw,se-nw,tile[2]),vec(x,y),nw
+		)
 	end,
 }
 
@@ -121,14 +171,11 @@ local function load(level_name)
 	for y = 0, heightmap:height()-2 do
 		map[y] = {}
 		for x = 0, heightmap:width()-2 do
-			local nw,ne = heightmap:get(x,y,2)
-			local sw,se = heightmap:get(x,y+1,2)
-			
 			local tile_gen =
 				tile_generators[tiles:get(x,y,1)]
 				or tile_generators[0]
 
-			map[y][x] = tile_gen(x,y,nw,ne,sw,se)
+			map[y][x] = tile_gen(x,y,map)
 		end
 	end
 
