@@ -53,14 +53,14 @@ end
 local sky_spr = get_spr(7)
 
 local function draw_sky(pitch,yaw)
-	local sky_x_off = yaw%0.25*1920
-	local sky_y_off = abs(pitch*1920)
+	local sky_x_off = yaw%0.33333*1440
+	local sky_y_off = abs(sin(pitch))*270+95
 	blit(sky_spr,0,-sky_x_off,sky_y_off,0,0,480,270-sky_y_off)
 	blit(sky_spr,0,-sky_x_off+480,sky_y_off,0,0,480,270-sky_y_off)
 end
 
 local function draw_game()
-	cls(12)
+	cls(16)
 	local cam_pos = Camera.get_pos()
 	local _,cam_pitch,cam_yaw = Camera.get_rot()
 	-- Sky
