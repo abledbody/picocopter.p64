@@ -1,4 +1,7 @@
 {
+	"Lua.workspace.library": [
+		"C:\\lualib\\picotron"
+	],
 	"Lua.runtime.nonstandardSymbol": [
 		"!=",
 		"+=",
